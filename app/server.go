@@ -32,12 +32,11 @@ func main() {
 	defer l.Close()
 
 	for {
-
-		c, err = l.Accept()
+		cn, err := l.Accept()
 		if err != nil {
 			fmt.Println("Error accepting connection: ", err)
 			continue
 		}
-
+		handleClient(cn)
 	}
 }
