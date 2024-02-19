@@ -17,9 +17,16 @@ type RedisCommand struct {
 }
 
 func (rc *RedisCommand) BuiltinEcho(cmd []string, cn net.Conn) {
-	for _, c := range cmd {
-		cn.Write([]byte(c))
+	var str string
+	size := len(cmd)
+	for i := 0; i < size; i++ {
+		if i == size -1 {
+			str += cmd[i]
+			continue 
+		}
+		str += cmd[i] + " "
 	}
+	cn.Write([]byte("+" + str + "\r\n"))
 }
 
 func (rc *RedisCommand) BuiltinPing(cmd []string, cn net.Conn) {
