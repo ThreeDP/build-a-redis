@@ -10,13 +10,16 @@ func handleClient(cn net.Conn) {
 	defer cn.Close()
 	buf := make([]byte, 1024)
 
-	n, err := cn.Read(buf)
-	if err != nil {
-		return
+	for {
+		n, err := cn.Read(buf)
+		if err != nil {
+			return
+		}
+		if n == 0 {
+			break
+		}
+		cn.Write([]byte("+PONG\r\n"))
 	}
-
-	fmt.Println("received data", buf[:n])
-	cn.Write([]byte("+PONG\r\n"))
 }
 
 func main() {
@@ -38,6 +41,6 @@ func main() {
 			continue
 		}
 		handleClient(cn)
-		
+
 	}
 }
