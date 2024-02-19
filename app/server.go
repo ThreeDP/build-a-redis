@@ -6,6 +6,19 @@ import (
 	"os"
 )
 
+func handleClient(cn net.Conn) {
+	defer cn.Close()
+	buf := make([]byte, 1024)
+
+	n, err := cn.Read(buf)
+	if err != nil {
+		return
+	}
+
+	fmt.Println("received data", buf[:n])
+	cn.Write([]byte("+PONG\r\n"))
+}
+
 func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Println("Logs from your program will appear here!")
@@ -15,9 +28,16 @@ func main() {
 		fmt.Println("Failed to bind to port 6379")
 		os.Exit(1)
 	}
-	_, err = l.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
+
+	defer l.Close()
+
+	for {
+
+		c, err = l.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection: ", err)
+			continue
+		}
+
 	}
 }
