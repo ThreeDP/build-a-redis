@@ -4,21 +4,54 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 )
 
-func handleClient(cn net.Conn) {
-	defer cn.Close()
+type RedisServer struct {
+	cn net.Conn
+	rc RedisCommand
+}
+
+type RedisCommand struct {
+
+}
+
+func (rc *RedisCommand) BuiltinEcho(cmd []string, cn net.Conn) {
+	for _, c := range cmd {
+		cn.Write([]byte(c))
+	}
+}
+
+func (rc *RedisCommand) BuiltinPing(cmd []string, cn net.Conn) {
+	cn.Write([]byte("+PONG\r\n"))
+}
+
+func (s *RedisServer) handleCommand(buf string) {
+	rpp := RedisProtocolParser{idx:0}
+	it, _ := rpp.ParserProtocol(buf)
+	cmd := it.([]string)
+	cmd[0] = strings.ToLower(cmd[0])
+	switch cmd[0] {
+		case "echo":
+			s.rc.BuiltinEcho(cmd[1:], s.cn)
+		case "ping":
+			s.rc.BuiltinPing(cmd[1:], s.cn)
+	}
+}
+
+func (s *RedisServer) handleClient() {
+	defer s.cn.Close()
 	buf := make([]byte, 1024)
 
 	for {
-		n, err := cn.Read(buf)
+		n, err := s.cn.Read(buf)
 		if err != nil {
 			return
 		}
 		if n == 0 {
 			break
 		}
-		cn.Write([]byte("+PONG\r\n"))
+		s.handleCommand(string(buf))
 	}
 }
 
@@ -35,12 +68,12 @@ func main() {
 	defer l.Close()
 
 	for {
-		cn, err := l.Accept()
+		s := RedisServer{}
+		s.cn, err = l.Accept()
 		if err != nil {
 			fmt.Println("Error accepting connection: ", err)
 			continue
 		}
-		go handleClient(cn)
-
+		go s.handleClient()
 	}
 }
