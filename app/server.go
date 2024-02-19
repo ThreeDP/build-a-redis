@@ -5,7 +5,10 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 )
+
+var mutex sync.Mutex
 
 type RedisServer struct {
 	cn net.Conn
@@ -13,10 +16,10 @@ type RedisServer struct {
 }
 
 type RedisCommand struct {
-
+	Map *map[string]string
 }
 
-func (rc *RedisCommand) BuiltinEcho(cmd []string, cn net.Conn) {
+func (rc *RedisCommand) EchoIn(cmd []string, cn net.Conn) {
 	var str string
 	size := len(cmd)
 	for i := 0; i < size; i++ {
@@ -29,7 +32,25 @@ func (rc *RedisCommand) BuiltinEcho(cmd []string, cn net.Conn) {
 	cn.Write([]byte("+" + str + "\r\n"))
 }
 
-func (rc *RedisCommand) BuiltinPing(cmd []string, cn net.Conn) {
+func (rc *RedisCommand) GetIn(cmd []string, cn net.Conn) {
+	mutex.Lock()
+	value, ok := (*rc.Map)[cmd[0]]
+	mutex.Unlock()
+	if !ok {
+		cn.Write([]byte("$-1\r\n"))
+		return
+	}
+	cn.Write([]byte(fmt.Sprintf("$%d\r\n%s\r\n", len(value), value)))
+}
+
+func (rc *RedisCommand) SetIn(cmd []string, cn net.Conn) {
+	mutex.Lock()
+	(*rc.Map)[cmd[0]] = cmd[1]
+	mutex.Unlock()
+	cn.Write([]byte("+OK\r\n"))
+}
+
+func (rc *RedisCommand) PingIn(cmd []string, cn net.Conn) {
 	cn.Write([]byte("+PONG\r\n"))
 }
 
@@ -40,9 +61,13 @@ func (s *RedisServer) handleCommand(buf string) {
 	cmd[0] = strings.ToLower(cmd[0])
 	switch cmd[0] {
 		case "echo":
-			s.rc.BuiltinEcho(cmd[1:], s.cn)
+			s.rc.EchoIn(cmd[1:], s.cn)
 		case "ping":
-			s.rc.BuiltinPing(cmd[1:], s.cn)
+			s.rc.PingIn(cmd[1:], s.cn)
+		case "get":
+			s.rc.GetIn(cmd[1:], s.cn)
+		case "set":
+			s.rc.SetIn(cmd[1:], s.cn)
 	}
 }
 
@@ -73,9 +98,9 @@ func main() {
 	}
 
 	defer l.Close()
-
+	env := make(map[string]string) 
 	for {
-		s := RedisServer{}
+		s := RedisServer{rc: RedisCommand{Map: &env}}
 		s.cn, err = l.Accept()
 		if err != nil {
 			fmt.Println("Error accepting connection: ", err)
