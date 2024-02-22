@@ -19,7 +19,7 @@ func TestInfoBuiltin(t *testing.T) {
 	t.Run("Test Info only command", func(t *testing.T) {
 		info := Info{Conn: s.Conn}
 		params := []string{""}
-		copy(s.Expected, "*1\r\n$11\r\nrole:master\r\n")
+		copy(s.Expected, "$11\r\nrole:master\r\n")
 
 		info.Cmd(params)
 
@@ -30,7 +30,7 @@ func TestInfoBuiltin(t *testing.T) {
 	t.Run("Test Info command with replication arg", func(t *testing.T) {
 		info := Info{Conn: s.Conn}
 		params := []string{"RepLication"}
-		copy(s.Expected, "*1\r\n$11\r\nrole:master\r\n")
+		copy(s.Expected, "$11\r\nrole:master\r\n")
 
 		info.Cmd(params)
 

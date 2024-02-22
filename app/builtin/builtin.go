@@ -139,11 +139,11 @@ func (e *Info) Cmd(params []string) () {
 	if len(params) > 0 {
 		switch params[0] {
 			case "replication": 
-				e.Conn.Write([]byte("*1\r\n$11\r\nrole:master\r\n"))
+				e.Conn.Write([]byte("$11\r\nrole:master\r\n"))
 				return
 		}
 	}
-	e.Conn.Write([]byte("*1\r\n$11\r\nrole:master\r\n"))
+	e.Conn.Write([]byte("$11\r\nrole:master\r\n"))
 }
 
 type Echo struct {
