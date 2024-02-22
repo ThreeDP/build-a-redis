@@ -10,8 +10,9 @@ import (
 )
 
 type RedisServer struct {
-	Env map[string]string
+	Env map[string]builtin.EnvData
 	Mutex sync.Mutex
+	Time builtin.ITime
 }
 
 func (s *RedisServer) handleCommand(buf string, conn net.Conn) {
@@ -28,7 +29,8 @@ func (s *RedisServer) handleCommand(buf string, conn net.Conn) {
 		case "get":
 			b = &builtin.Get{Conn: conn, Env: s.Env, Mutex: &s.Mutex}
 		case "set":
-			b = &builtin.Set{Conn: conn, Env: s.Env, Mutex: &s.Mutex}
+			b = &builtin.Set{Conn: conn, Env: s.Env,
+				Mutex: &s.Mutex, Now: s.Time.Now()}
 		default:
 			return
 	}
@@ -60,7 +62,7 @@ func main() {
 	}
 
 	defer l.Close()
-	s := RedisServer{Env: make(map[string]string)}
+	s := RedisServer{Env: make(map[string]builtin.EnvData), Time: builtin.Time{}}
 	for {
 		conn, err := l.Accept()
 		if err != nil {

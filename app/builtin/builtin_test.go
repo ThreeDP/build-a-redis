@@ -7,35 +7,94 @@ import (
 	"time"
 )
 
+type TTime struct {}
+func (t TTime) Now() time.Time {
+	return time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC)
+}
+
 func TestSetBuiltin(t *testing.T) {
 	s := SetupFilesRDWR{}
-	s.config(map[string]string{
-		"Percy": "????",
+	getTime := TTime{}
+	s.config(map[string]EnvData{
+		"Percy": {Value: "???", Expiry: s.TimeNow, MustExpire: false},
+		"EX": {Value: "?!?", Expiry: s.TimeNow.Add(time.Millisecond * 100), MustExpire: true},
 	})
 
 	t.Run("Test set Percy with value response Jackson", func(t *testing.T) {
-		set := Set{Conn: s.Conn, Env: s.Env, Mutex: s.Mutex}
+		set := Set{Conn: s.Conn, Env: s.Env, Mutex: s.Mutex, Now: getTime.Now()}
 		params := []string{"Percy", "Jackson"}
 		copy(s.Expected, "+OK\r\n")
 
 		set.Cmd(params)
 
-		value, ok := s.Env[params[0]]
-		if !ok {
-			t.Error("variable don't set")
-		}
-		if value != params[1] {
-			t.Errorf("Expected '%s', but has '%s'", params[1], value)
-		}
+		data, ok := s.Env[params[0]]
+		checkVarValue(t, ok, data.Value, params[1])
+		checkVarDate(t, data.Expiry, s.TimeNow)
+		checkMustExpire(t, data.MustExpire, false)
 		compareStrings(t, s.Expected, s.Out)
+		s.reset()
 	})
+	
+	t.Run("Test set Percy PX 100 with value response Jackson", func(t *testing.T) {
+		set := Set{Conn: s.Conn, Env: s.Env, Mutex: s.Mutex, Now: getTime.Now()}
+		params := []string{"Minute", "10Sec", "Px", "100"}
+		copy(s.Expected, "+OK\r\n")
+		
+		set.Cmd(params)
+		
+		data, ok := s.Env[params[0]]
+		checkVarValue(t, ok, data.Value, params[1])
+		checkVarDate(t, data.Expiry, s.TimeNow.Add(time.Millisecond * 100))
+		checkMustExpire(t, data.MustExpire, true)
+		compareStrings(t, s.Expected, s.Out)
+		s.reset()
+	})
+
+	t.Run("Test set {minute, 10sec, PX, 100, $7}", func(t *testing.T) {
+		set := Set{Conn: s.Conn, Env: s.Env, Mutex: s.Mutex, Now: getTime.Now()}
+		params := []string{"Minute", "10Sec", "PX", "100", "$7"}
+		copy(s.Expected, "+OK\r\n")
+		
+		set.Cmd(params)
+		
+		data, ok := s.Env[params[0]]
+		checkVarValue(t, ok, data.Value, params[1])
+		checkVarDate(t, data.Expiry, s.TimeNow.Add(time.Millisecond * 100))
+		checkMustExpire(t, data.MustExpire, true)
+		compareStrings(t, s.Expected, s.Out)
+		s.reset()
+	})
+}
+
+func checkVarValue(t *testing.T, ok bool, received, expected string) {
+	t.Helper()
+	if !ok {
+		t.Error("variable don't set")
+	}
+	if received != expected {
+		t.Errorf("Expected '%s', but has '%s'", expected, received)
+	}
+}
+
+func checkVarDate(t *testing.T, received, expected time.Time) {
+	t.Helper()
+	if received != expected {
+		t.Errorf("Expected %v, but has %v\n", expected, received)
+	}
+}
+
+func checkMustExpire(t *testing.T, received, expected bool) {
+	t.Helper()
+	if received != expected {
+		t.Errorf("Expected %t, but has %t\n", expected, expected)
+	}
 }
 
 func TestGetBuiltin(t *testing.T) {
 	s := SetupFilesRDWR{}
-	s.config(map[string]string {
-		"Percy": "Jackson",
-		"Key": "Value",
+	s.config(map[string]EnvData {
+		"Percy": {Value: "Jackson", Expiry: s.TimeNow, MustExpire: false},
+		"Key": {Value: "Value", Expiry: s.TimeNow.Add(time.Millisecond * -11), MustExpire: true},
 	})
 
 	t.Run("Test get key Percy and response Jackson", func(t *testing.T) {
@@ -46,6 +105,7 @@ func TestGetBuiltin(t *testing.T) {
 		get.Cmd(params)
 
 		compareStrings(t, s.Expected, s.Out)
+		s.reset()
 	})
 
 	t.Run("Test get key Any and response nil", func(t *testing.T) {
@@ -56,10 +116,21 @@ func TestGetBuiltin(t *testing.T) {
 		get.Cmd(params)
 
 		compareStrings(t, s.Expected, s.Out)
+		s.reset()
+	})
+
+	t.Run("Test get expired Key Any and response nil", func(t *testing.T) {
+		get := Get{Conn: s.Conn, Env: s.Env, Mutex: s.Mutex}
+		params := []string{"Key"}
+		copy(s.Expected, "$-1\r\n")
+
+		get.Cmd(params)
+		compareStrings(t, s.Expected, s.Out)
+		s.reset()
 	})
 }
 
-func TestpingBuiltin(t *testing.T) {
+func TestPingBuiltin(t *testing.T) {
 	s := SetupFilesRDWR{}
 	s.config(nil)
 
@@ -71,6 +142,7 @@ func TestpingBuiltin(t *testing.T) {
 		ping.Cmd(params)
 
 		compareStrings(t, s.Expected, s.Out)
+		s.reset()
 	})
 }
 
@@ -86,6 +158,7 @@ func TestEchoBuiltin(t *testing.T) {
 		echo.Cmd(params)
 
 		compareStrings(t, s.Expected, s.Out)
+		s.reset()
 	})
 
 	t.Run("Test pass a \"hey\" string", func (t *testing.T) {
@@ -96,6 +169,7 @@ func TestEchoBuiltin(t *testing.T) {
 		echo.Cmd(params)
 
 		compareStrings(t, s.Expected, s.Out)
+		s.reset()
 	})
 }
 
@@ -145,7 +219,6 @@ func (c TConn) RemoteAddr() net.Addr {
     }
 }
 
-
 /*
 	Mutex struct Mock
 */
@@ -162,15 +235,24 @@ type SetupFilesRDWR struct {
 	Out []byte
 	Expected []byte
 	Conn TConn
-	Env map[string]string
+	Env map[string]EnvData
 	Mutex IMutex
+	TimeNow time.Time
 }
 
-func (s *SetupFilesRDWR) config( values map[string]string) {
-	s.In = make([]byte, 1024)
-	s.Out = make([]byte, 1024)
-	s.Expected = make([]byte, 1024)
+func (s *SetupFilesRDWR) config(data map[string]EnvData) {
+	s.In = make([]byte, BUFFERSIZE)
+	s.Out = make([]byte, BUFFERSIZE)
+	s.Expected = make([]byte, BUFFERSIZE)
 	s.Conn = TConn{In: s.In, Out: s.Out}
-	s.Env = values
+	s.Env = data
 	s.Mutex = TMutex{}
+	s.TimeNow = time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC)
+}
+
+func (s *SetupFilesRDWR) reset() {
+	s.Expected = make([]byte, BUFFERSIZE)
+	s.In = make([]byte, BUFFERSIZE)
+	s.Out = make([]byte, BUFFERSIZE)
+	s.Conn = TConn{In: s.In, Out: s.Out}
 }
