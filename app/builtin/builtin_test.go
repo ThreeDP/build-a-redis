@@ -94,7 +94,7 @@ func TestGetBuiltin(t *testing.T) {
 	s := SetupFilesRDWR{}
 	s.config(map[string]EnvData {
 		"Percy": {Value: "Jackson", Expiry: s.TimeNow, MustExpire: false},
-		"Key": {Value: "Value", Expiry: s.TimeNow.Add(time.Millisecond * -11), MustExpire: true},
+		"Key": {Value: "Value", Expiry: s.TimeNow.Add(-10 * time.Millisecond), MustExpire: true},
 	})
 
 	t.Run("Test get key Percy and response Jackson", func(t *testing.T) {

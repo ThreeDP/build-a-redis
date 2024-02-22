@@ -27,7 +27,8 @@ func (s *RedisServer) handleCommand(buf string, conn net.Conn) {
 		case "ping":
 			b = &builtin.Ping{Conn: conn}
 		case "get":
-			b = &builtin.Get{Conn: conn, Env: s.Env, Mutex: &s.Mutex}
+			b = &builtin.Get{Conn: conn, Env: s.Env,
+				Mutex: &s.Mutex, Now: s.Time.Now()}
 		case "set":
 			b = &builtin.Set{Conn: conn, Env: s.Env,
 				Mutex: &s.Mutex, Now: s.Time.Now()}
