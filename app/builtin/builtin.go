@@ -131,6 +131,21 @@ func (g *Get) Cmd(params []string) {
 	g.Conn.Write([]byte(fmt.Sprintf("$%d\r\n%s\r\n", len(data.Value), data.Value)))
 }
 
+type Info struct {
+	Conn net.Conn
+}
+
+func (e *Info) Cmd(params []string) () {
+	if len(params) > 0 {
+		switch params[0] {
+			case "replication": 
+				e.Conn.Write([]byte("*1\r\n$11\r\nrole:master\r\n"))
+				return
+		}
+	}
+	e.Conn.Write([]byte("*1\r\n$11\r\nrole:master\r\n"))
+}
+
 type Echo struct {
 	Conn net.Conn
 }

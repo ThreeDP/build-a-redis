@@ -26,6 +26,8 @@ func (s *RedisServer) handleCommand(buf string, conn net.Conn) {
 			b = &builtin.Echo{Conn: conn}
 		case "ping":
 			b = &builtin.Ping{Conn: conn}
+		case "info":
+			b = &builtin.Info{Conn: conn}
 		case "get":
 			b = &builtin.Get{Conn: conn, Env: s.Env,
 				Mutex: &s.Mutex, Now: s.Time.Now()}
@@ -66,10 +68,9 @@ func catPort(params []string) string {
 func main() {
 	fmt.Println("Logs from your program will appear here!")
 	port := catPort(os.Args[1:])
-	fmt.Printf("%v\n", port)
 	l, err := net.Listen("tcp", "0.0.0.0:" + port)
 	if err != nil {
-		fmt.Println("Failed to bind to port 6379")
+		fmt.Println("Failed to bind to port " + port)
 		os.Exit(1)
 	}
 

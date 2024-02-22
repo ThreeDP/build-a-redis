@@ -12,6 +12,33 @@ func (t TTime) Now() time.Time {
 	return time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC)
 }
 
+func TestInfoBuiltin(t *testing.T) {
+	s := SetupFilesRDWR{}
+	s.config(nil)
+
+	t.Run("Test Info only command", func(t *testing.T) {
+		info := Info{Conn: s.Conn}
+		params := []string{""}
+		copy(s.Expected, "*1\r\n$11\r\nrole:master\r\n")
+
+		info.Cmd(params)
+
+		compareStrings(t, s.Expected, s.Out)
+		s.reset()
+	})
+
+	t.Run("Test Info command with replication arg", func(t *testing.T) {
+		info := Info{Conn: s.Conn}
+		params := []string{"RepLication"}
+		copy(s.Expected, "*1\r\n$11\r\nrole:master\r\n")
+
+		info.Cmd(params)
+
+		compareStrings(t, s.Expected, s.Out)
+		s.reset()
+	})
+}
+
 func TestSetBuiltin(t *testing.T) {
 	s := SetupFilesRDWR{}
 	getTime := TTime{}
