@@ -54,9 +54,19 @@ func (s *RedisServer) handleClient(conn net.Conn) {
 	}
 }
 
+func catPort(params []string) string {
+	if (len(params) > 1) {
+		if (params[0] == "--port") {
+			return params[1]
+		}
+	}
+	return "6379"
+}
+
 func main() {
 	fmt.Println("Logs from your program will appear here!")
-	l, err := net.Listen("tcp", "0.0.0.0:6379")
+	port := catPort(os.Args[1:])
+	l, err := net.Listen("tcp", "0.0.0.0" + port)
 	if err != nil {
 		fmt.Println("Failed to bind to port 6379")
 		os.Exit(1)
