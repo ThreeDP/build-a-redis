@@ -1,4 +1,4 @@
-name: Test
+name: Test and coverage
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Go
       uses: actions/setup-go@v4
@@ -24,9 +24,10 @@ jobs:
     - name: Test
       run: make t
 
+    - name: Run coverage
+      run: go test -race -coverprofile=coverage.txt -covermode=atomic
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v4.0.1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        slug: ThreeDP/build-a-redis
+      uses: codecov/codecov-action@v4-beta
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
