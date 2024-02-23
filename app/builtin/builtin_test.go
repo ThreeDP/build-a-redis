@@ -17,8 +17,13 @@ func TestInfoBuiltin(t *testing.T) {
 	s.config(nil)
 
 	t.Run("Test Info only command", func(t *testing.T) {
-		info := Info{Conn: s.Conn}
-		params := []string{""}
+		i := map[string]map[string]string{
+			"replication": {
+				"role": "master",
+			},
+		}
+		info := Info{Conn: s.Conn, Infos: i}
+		params := []string{}
 		copy(s.Expected, "$11\r\nrole:master\r\n")
 
 		info.Cmd(params)
@@ -28,9 +33,26 @@ func TestInfoBuiltin(t *testing.T) {
 	})
 
 	t.Run("Test Info command with replication arg", func(t *testing.T) {
-		info := Info{Conn: s.Conn}
+		i := map[string]map[string]string{
+			"replication": {
+				"role":"slave",
+			},
+		}
+		info := Info{Conn: s.Conn, Infos: i}
 		params := []string{"RepLication"}
-		copy(s.Expected, "$11\r\nrole:master\r\n")
+		copy(s.Expected, "$10\r\nrole:slave\r\n")
+
+		info.Cmd(params)
+
+		compareStrings(t, s.Expected, s.Out)
+		s.reset()
+	})
+
+	t.Run("Test Info command without Infos values inside", func(t *testing.T) {
+		i := map[string]map[string]string{}
+		info := Info{Conn: s.Conn, Infos: i}
+		params := []string{}
+		copy(s.Expected, "$-1\r\n")
 
 		info.Cmd(params)
 
@@ -171,6 +193,20 @@ func TestPingBuiltin(t *testing.T) {
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
 	})
+}
+
+func BenchmarkPingBuiltin(b *testing.B) {
+	s := SetupFilesRDWR{}
+	s.config(nil)
+	params := []string{"ping"}
+	copy(s.Expected, "+PONG\r\n")
+
+	for i := 0; i < b.N; i++ {
+		ping := Ping{Conn: s.Conn}
+
+		ping.Cmd(params)
+		s.reset()
+	}
 }
 
 func TestEchoBuiltin(t *testing.T) {

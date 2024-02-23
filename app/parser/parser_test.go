@@ -1,4 +1,4 @@
-package main
+package parser
 
 import (
 	"reflect"
@@ -7,7 +7,7 @@ import (
 
 func TestParserRedisProtocol(t *testing.T) {
 	t.Run("Test parser the bulk string $4hello\\r\\n", func(t *testing.T) {
-		rrp := RedisProtocolParser{idx:0}
+		rrp := RedisProtocolParser{Idx:0}
 		input := "$5\r\nhello\r\n"
 		expected := "hello"
 		
@@ -19,7 +19,7 @@ func TestParserRedisProtocol(t *testing.T) {
 	})
 	
 	t.Run("Test parser the bulk string $3war\\r\\n", func(t *testing.T) {
-		rrp := RedisProtocolParser{idx:0}
+		rrp := RedisProtocolParser{Idx:0}
 		input := "$3\r\nwar\r\n"
 		expected := "war"
 
@@ -31,7 +31,7 @@ func TestParserRedisProtocol(t *testing.T) {
 	})
 
 	t.Run("Test parser the bulk string $0\\r\\n", func(t *testing.T) {
-		rrp := RedisProtocolParser{idx:0}
+		rrp := RedisProtocolParser{Idx:0}
 		input := "$0\r\n\r\n"
 		expected := ""
 
@@ -43,7 +43,7 @@ func TestParserRedisProtocol(t *testing.T) {
 	})
 
 	t.Run("Test parser the bulk string $-1\\r\\n", func(t *testing.T) {
-		rrp := RedisProtocolParser{idx:0}
+		rrp := RedisProtocolParser{Idx:0}
 		input := "$-1\r\n"
 		var expected interface{}
 
@@ -55,7 +55,7 @@ func TestParserRedisProtocol(t *testing.T) {
 	})
 
 	t.Run("Test parser the bulk string *2\\r\\n$3\\r\\ngod\\r\\n$3\\r\\nbad\\r\\n", func(t *testing.T) {
-		rrp := RedisProtocolParser{idx:0}
+		rrp := RedisProtocolParser{Idx:0}
 		input := "*2\r\n$3\r\ngod\r\n$3\r\nbad\r\n"
 		expected := []string {"god", "bad"}
 
@@ -71,7 +71,7 @@ func TestParserRedisProtocol(t *testing.T) {
 	})
 
 	t.Run("Test parser the bulk string *3\\r\\n$3\\r\\ngod\\r\\n$2\\r\\nof\r\n$3\\r\\nwar\\r\\n", func(t *testing.T) {
-		rrp := RedisProtocolParser{idx:0}
+		rrp := RedisProtocolParser{Idx:0}
 		input := "*3\r\n$3\r\ngod\r\n$2\r\nof\r\n$3\r\nwar\r\n"
 		expected := []string {"god", "of", "war"}
 

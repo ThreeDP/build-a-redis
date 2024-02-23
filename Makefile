@@ -1,13 +1,24 @@
+NAME			:= 	server.tmp
 PROJECT_PATH	:= 	./app/
 TEST_PATH		:= 	$(addprefix $(PROJECT_PATH), \
-					builtin .)
+					builtin parser server)
 
 all:
+	go build -o $(NAME) $(PROJECT_PATH)*.go
 
 # Run tests
 t: $(TEST_PATH)
 
 $(TEST_PATH):
-	cd $@ && go test
+	@echo "[================ RUN TEST $@ ================]"
+	@cd $@ && go test
+	@echo
+
+# $(TEST_PATH):
+# 	@echo "[================ RUN TEST $@ ================]"
+# 	@cd $@ && go test
+# 	@cd $@ && go test -cover
+# 	@cd $@ && go test -bench=.
+# 	@echo 
 
 .PHONY: $(TEST_PATH)

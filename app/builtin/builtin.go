@@ -133,17 +133,49 @@ func (g *Get) Cmd(params []string) {
 
 type Info struct {
 	Conn net.Conn
+	Infos map[string]map[string]string
+}
+
+func (e Info) countInfos(m map[string]map[string]string) string {
+	str := ""
+	sizeMap := len(m)
+	for _, i := range m {
+		sizeMap += len(i)
+	}
+	if sizeMap > 1 {
+		str = fmt.Sprintf("*%d\r\n", sizeMap)
+	}
+	return str
+}
+
+func (e *Info) mapToRedisString(m map[string]string, section string) string {
+	str := fmt.Sprintf("$%d\r\n%s\r\n", len("# " + section), "# " + section)
+	for k, v := range m {
+		strSize := len(k) + len(v) + len(":")
+		str += fmt.Sprintf("$%d\r\n%s:%s\r\n", strSize, k, v)
+	}
+	return str
 }
 
 func (e *Info) Cmd(params []string) () {
-	if len(params) > 0 {
-		switch params[0] {
-			case "replication": 
-				e.Conn.Write([]byte("$11\r\nrole:master\r\n"))
-				return
+	str := ""
+	cParams := findNextRedisSerialization(params)
+	str += e.countInfos(e.Infos)
+	if len(cParams) > 0 {
+		for _, v := range cParams {
+			str = e.mapToRedisString(e.Infos[strings.ToLower(v)],
+			strings.Title(strings.ToLower(v)))
+		}
+	} else {
+		if len(e.Infos) == 0 {
+			str = "$-1\r\n"
+		}
+		for key, v := range e.Infos {
+			str += e.mapToRedisString(v, strings.Title(key))
 		}
 	}
-	e.Conn.Write([]byte("$11\r\nrole:master\r\n"))
+	fmt.Print(str)
+	e.Conn.Write([]byte(str))
 }
 
 type Echo struct {
