@@ -136,18 +136,6 @@ type Info struct {
 	Infos map[string]map[string]string
 }
 
-func (e Info) countInfos(m map[string]map[string]string) string {
-	str := ""
-	sizeMap := len(m)
-	for _, i := range m {
-		sizeMap += len(i)
-	}
-	if sizeMap > 1 {
-		str = fmt.Sprintf("*%d\r\n", sizeMap)
-	}
-	return str
-}
-
 func (e *Info) mapToRedisString(m map[string]string, section string) string {
 	str := fmt.Sprintf("$%d\r\n%s\r\n", len("# " + section), "# " + section)
 	for k, v := range m {
@@ -160,10 +148,12 @@ func (e *Info) mapToRedisString(m map[string]string, section string) string {
 func (e *Info) Cmd(params []string) () {
 	str := ""
 	cParams := findNextRedisSerialization(params)
-	str += e.countInfos(e.Infos)
+	listSize := 0
 	if len(cParams) > 0 {
 		for _, v := range cParams {
-			str = e.mapToRedisString(e.Infos[strings.ToLower(v)],
+			section := e.Infos[strings.ToLower(v)]
+			listSize += len(section) + 1
+			str = e.mapToRedisString(section,
 			strings.Title(strings.ToLower(v)))
 		}
 	} else {
@@ -171,8 +161,12 @@ func (e *Info) Cmd(params []string) () {
 			str = "$-1\r\n"
 		}
 		for key, v := range e.Infos {
+			listSize += len(v) + 1
 			str += e.mapToRedisString(v, strings.Title(key))
 		}
+	}
+	if listSize > 0 {
+		str = fmt.Sprintf("*%d\r\n%s", listSize, str)
 	}
 	e.Conn.Write([]byte(str))
 }
