@@ -34,4 +34,6 @@ jobs:
       uses: codecov/codecov-action@v4.0.1
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      with:
+        file: ./coverage.txt
 

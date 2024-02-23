@@ -13,7 +13,7 @@ unit:
 cov:
 	cd app && go test ./... -race -coverprofile=../coverage.txt -covermode=atomic
 
-bech:
+bench:
 	go test ./... -bench=.
 
 .PHONY: $(TEST_PATH)
