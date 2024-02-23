@@ -55,6 +55,8 @@ func (s *RedisServer) insertInfos(section, key, value string) {
 func (s *RedisServer) defaultInfos() {
 	s.insertInfos("server", "port", DEFAULPORT)
 	s.insertInfos("replication", "role", "master")
+	s.insertInfos("replication", "master_replid", "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb")
+	s.insertInfos("replication", "master_repl_offset", "0")
 	listener := fmt.Sprintf(
 		"name=%s,bind=%s,bind=%s,port=%s",
 		"tcp",
