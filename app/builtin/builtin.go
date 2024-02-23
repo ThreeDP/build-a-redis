@@ -138,6 +138,7 @@ type Info struct {
 
 func (e *Info) mapToBulkString(m map[string]string, section string) string {
 	// str := fmt.Sprintf("# %s\n\n", section)
+	str := ""
 	for k, v := range m {
 		str += fmt.Sprintf("%s:%s\n", k, v)
 	}
