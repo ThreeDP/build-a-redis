@@ -137,7 +137,7 @@ type Info struct {
 }
 
 func (e *Info) mapToRedisString(m map[string]string, section string) string {
-	str := fmt.Sprintf("$%d\r\n%s\r\n", len("# " + section), "# " + section)
+	str := ""
 	for k, v := range m {
 		strSize := len(k) + len(v) + len(":")
 		str += fmt.Sprintf("$%d\r\n%s:%s\r\n", strSize, k, v)
@@ -152,7 +152,7 @@ func (e *Info) Cmd(params []string) () {
 	if len(cParams) > 0 {
 		for _, v := range cParams {
 			section := e.Infos[strings.ToLower(v)]
-			listSize += len(section) + 1
+			listSize += len(section)
 			str = e.mapToRedisString(section,
 			strings.Title(strings.ToLower(v)))
 		}
@@ -162,10 +162,11 @@ func (e *Info) Cmd(params []string) () {
 		}
 		for key, v := range e.Infos {
 			listSize += len(v) + 1
+			str := fmt.Sprintf("$%d\r\n%s\r\n", len("# " + key), "# " + key)
 			str += e.mapToRedisString(v, strings.Title(key))
 		}
 	}
-	if listSize > 0 {
+	if listSize > 1 {
 		str = fmt.Sprintf("*%d\r\n%s", listSize, str)
 	}
 	e.Conn.Write([]byte(str))
