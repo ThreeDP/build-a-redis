@@ -107,30 +107,53 @@ func (s *RedisServer) Run() {
 	}
 }
 
+func (s *RedisServer) getCommands(conn net.Conn) func(key string) (builtin.Builtin, bool) {
+	commands := map[string]builtin.Builtin{
+		"echo": &builtin.Echo{Conn: conn},
+		"ping": &builtin.Ping{Conn: conn},
+		"info": &builtin.Info{Conn: conn, Infos: s.Infos},
+		"get": &builtin.Get{Conn: conn, Env: s.Env,
+			Mutex: &s.Mutex, Now: s.Time.Now()},
+		"set": &builtin.Set{Conn: conn, Env: s.Env,
+			Mutex: &s.Mutex, Now: s.Time.Now()},
+	}
+	return func(key string) (builtin.Builtin, bool) {
+		elem, ok := commands[key]
+		return elem, ok
+	}
+}
+
 func (s *RedisServer) handleCommand(buf string, conn net.Conn) {
 	var b builtin.Builtin
+	commands := s.getCommands(conn)
 	rpp := parser.RedisProtocolParser{Idx:0}
 	it, _ := rpp.ParserProtocol(buf)
 	cmd := it.([]string)
-	cmd[0] = strings.ToLower(cmd[0])
-	switch cmd[0] {
-		case "echo":
-			b = &builtin.Echo{Conn: conn}
-		case "ping":
-			b = &builtin.Ping{Conn: conn}
-		case "info":
-			b = &builtin.Info{Conn: conn, Infos: s.Infos}
-		case "get":
-			b = &builtin.Get{Conn: conn, Env: s.Env,
-				Mutex: &s.Mutex, Now: s.Time.Now()}
-		case "set":
-			b = &builtin.Set{Conn: conn, Env: s.Env,
-				Mutex: &s.Mutex, Now: s.Time.Now()}
-		default:
-			err := fmt.Sprintf("-ERR unknown command '%s'\r\n", cmd[0])
-			conn.Write([]byte(err))
-			return
+	b, ok := commands(strings.ToLower(cmd[0]))
+	if !ok {
+		err := fmt.Sprintf("-ERR unknown command '%s'\r\n", cmd[0])
+		conn.Write([]byte(err))
+		return
 	}
+	// cmd[0] = strings.ToLower(cmd[0])
+	// switch cmd[0] {
+	// 	case "echo":
+	// 		b = &builtin.Echo{Conn: conn}
+	// 	case "ping":
+	// 		b = &builtin.Ping{Conn: conn}
+	// 	case "info":
+	// 		b = &builtin.Info{Conn: conn, Infos: s.Infos}
+	// 	case "get":
+	// 		b = &builtin.Get{Conn: conn, Env: s.Env,
+	// 			Mutex: &s.Mutex, Now: s.Time.Now()}
+	// 	case "set":
+	// 		b = &builtin.Set{Conn: conn, Env: s.Env,
+	// 			Mutex: &s.Mutex, Now: s.Time.Now()}
+	// 	default:
+	// 		err := fmt.Sprintf("-ERR unknown command '%s'\r\n", cmd[0])
+	// 		conn.Write([]byte(err))
+	// 		return
+	// }
 	b.Cmd(cmd[1:])
 }
 
