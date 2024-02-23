@@ -174,7 +174,6 @@ func (e *Info) Cmd(params []string) () {
 			str += e.mapToRedisString(v, strings.Title(key))
 		}
 	}
-	fmt.Print(str)
 	e.Conn.Write([]byte(str))
 }
 
