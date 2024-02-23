@@ -86,3 +86,29 @@ func TestParserRedisProtocol(t *testing.T) {
 		}
 	})
 }
+
+func TestBulkStringEncode(t *testing.T) {
+	t.Run("Test encode the string hello", func(t *testing.T) {
+		input := "hello"
+		expected := []byte("$5\r\nhello\r\n")
+
+		res := BulkStringEncode(input)
+
+		if string(res) != string(expected) {
+			t.Errorf("Expected '%s', but has '%s'\n", string(expected), string(res))
+		}
+	})
+}
+
+func TestArrayEncode(t *testing.T) {
+	t.Run("Test encode the array of strings", func(t *testing.T) {
+		input := []string{"god", "of", "war"}
+		expected := []byte("*3\r\n$3\r\ngod\r\n$2\r\nof\r\n$3\r\nwar\r\n")
+
+		res := ArrayEncode(input)
+
+		if string(res) != string(expected) {
+			t.Errorf("Expected '%s', but has '%s'\n", string(expected), string(res))
+		}
+	})
+}

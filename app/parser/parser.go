@@ -9,7 +9,11 @@ type RedisProtocolParser struct {
 	Idx int
 }
 
-func (rpp *RedisProtocolParser) bulkStringParser(pieces []string) (interface{}, error) {
+func BulkStringEncode(str string) []byte {
+	return []byte("$" + strconv.Itoa(len(str)) + "\r\n" + str + "\r\n")
+}
+
+func (rpp *RedisProtocolParser) BulkStringDecode(pieces []string) (interface{}, error) {
 	size, err := strconv.Atoi(pieces[rpp.Idx][1:])
 	if err != nil {
 		return nil, err
@@ -19,6 +23,14 @@ func (rpp *RedisProtocolParser) bulkStringParser(pieces []string) (interface{}, 
 	}
 	rpp.Idx += 1
 	return pieces[rpp.Idx][:size], nil
+}
+
+func ArrayEncode(array []string) []byte {
+	str := "*" + strconv.Itoa(len(array)) + "\r\n"
+	for _, v := range array {
+		str += string(BulkStringEncode(v))
+	}
+	return []byte(str)
 }
 
 func (rpp *RedisProtocolParser) arrayParser(pieces []string) (interface{}, error) {
@@ -45,7 +57,7 @@ func (rpp *RedisProtocolParser) arrayParser(pieces []string) (interface{}, error
 func (rpp *RedisProtocolParser) defineDataType(pieces []string) (interface{}, error) {
 	switch {
 		case strings.HasPrefix(pieces[rpp.Idx], "$"):
-			return rpp.bulkStringParser(pieces)
+			return rpp.BulkStringDecode(pieces)
 		case strings.HasPrefix(pieces[rpp.Idx], "*"):
 			return rpp.arrayParser(pieces)
 	}

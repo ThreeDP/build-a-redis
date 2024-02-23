@@ -1,14 +1,15 @@
 package builtin
 
 import (
-	"testing"
-	"reflect"
 	"net"
-	"time"
+	"reflect"
 	"strings"
+	"testing"
+	"time"
 )
 
-type TTime struct {}
+type TTime struct{}
+
 func (t TTime) Now() time.Time {
 	return time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC)
 }
@@ -27,7 +28,7 @@ func TestInfoBuiltin(t *testing.T) {
 		params := []string{}
 		copy(s.Expected, "$27\r\n## Replication\n\nrole:master\r\n")
 
-		info.Cmd(params)
+		info.Received(params)
 
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
@@ -36,14 +37,14 @@ func TestInfoBuiltin(t *testing.T) {
 	t.Run("Test Info command with replication arg", func(t *testing.T) {
 		i := map[string]map[string]string{
 			"replication": {
-				"role":"slave",
+				"role": "slave",
 			},
 		}
 		info := Info{Conn: s.Conn, Infos: i}
 		params := []string{"RepLication"}
 		copy(s.Expected, "$26\r\n## Replication\n\nrole:slave\r\n")
 
-		info.Cmd(params)
+		info.Received(params)
 
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
@@ -52,14 +53,14 @@ func TestInfoBuiltin(t *testing.T) {
 	t.Run("Test Info command with replication arg more keys", func(t *testing.T) {
 		i := map[string]map[string]string{
 			"replication": {
-				"role":"slave",
-				"master_replid":"8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb",
-				"master_repl_offset":"0",
+				"role":               "slave",
+				"master_replid":      "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb",
+				"master_repl_offset": "0",
 			},
 		}
 		info := Info{Conn: s.Conn, Infos: i}
 		params := []string{"RepLication"}
-		expected := []string {
+		expected := []string{
 			"$102\r\n",
 			"## Replication\n\n",
 			"master_repl_offset:0",
@@ -67,7 +68,7 @@ func TestInfoBuiltin(t *testing.T) {
 			"master_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb",
 		}
 
-		info.Cmd(params)
+		info.Received(params)
 
 		compareSubStringsInString(t, expected, s.Out)
 		s.reset()
@@ -79,7 +80,7 @@ func TestSetBuiltin(t *testing.T) {
 	getTime := TTime{}
 	s.config(map[string]EnvData{
 		"Percy": {Value: "???", Expiry: s.TimeNow, MustExpire: false},
-		"EX": {Value: "?!?", Expiry: s.TimeNow.Add(time.Millisecond * 100), MustExpire: true},
+		"EX":    {Value: "?!?", Expiry: s.TimeNow.Add(time.Millisecond * 100), MustExpire: true},
 	})
 
 	t.Run("Test set Percy with value response Jackson", func(t *testing.T) {
@@ -87,7 +88,7 @@ func TestSetBuiltin(t *testing.T) {
 		params := []string{"Percy", "Jackson"}
 		copy(s.Expected, "+OK\r\n")
 
-		set.Cmd(params)
+		set.Received(params)
 
 		data, ok := s.Env[params[0]]
 		checkVarValue(t, ok, data.Value, params[1])
@@ -96,17 +97,17 @@ func TestSetBuiltin(t *testing.T) {
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
 	})
-	
+
 	t.Run("Test set Percy PX 100 with value response Jackson", func(t *testing.T) {
 		set := Set{Conn: s.Conn, Env: s.Env, Mutex: s.Mutex, Now: getTime.Now()}
 		params := []string{"Minute", "10Sec", "Px", "100"}
 		copy(s.Expected, "+OK\r\n")
-		
-		set.Cmd(params)
-		
+
+		set.Received(params)
+
 		data, ok := s.Env[params[0]]
 		checkVarValue(t, ok, data.Value, params[1])
-		checkVarDate(t, data.Expiry, s.TimeNow.Add(time.Millisecond * 100))
+		checkVarDate(t, data.Expiry, s.TimeNow.Add(time.Millisecond*100))
 		checkMustExpire(t, data.MustExpire, true)
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
@@ -116,12 +117,12 @@ func TestSetBuiltin(t *testing.T) {
 		set := Set{Conn: s.Conn, Env: s.Env, Mutex: s.Mutex, Now: getTime.Now()}
 		params := []string{"Minute", "10Sec", "PX", "100", "$7"}
 		copy(s.Expected, "+OK\r\n")
-		
-		set.Cmd(params)
-		
+
+		set.Received(params)
+
 		data, ok := s.Env[params[0]]
 		checkVarValue(t, ok, data.Value, params[1])
-		checkVarDate(t, data.Expiry, s.TimeNow.Add(time.Millisecond * 100))
+		checkVarDate(t, data.Expiry, s.TimeNow.Add(time.Millisecond*100))
 		checkMustExpire(t, data.MustExpire, true)
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
@@ -154,9 +155,9 @@ func checkMustExpire(t *testing.T, received, expected bool) {
 
 func TestGetBuiltin(t *testing.T) {
 	s := SetupFilesRDWR{}
-	s.config(map[string]EnvData {
+	s.config(map[string]EnvData{
 		"Percy": {Value: "Jackson", Expiry: s.TimeNow, MustExpire: false},
-		"Key": {Value: "Value", Expiry: s.TimeNow.Add(-10 * time.Millisecond), MustExpire: true},
+		"Key":   {Value: "Value", Expiry: s.TimeNow.Add(-10 * time.Millisecond), MustExpire: true},
 	})
 
 	t.Run("Test get key Percy and response Jackson", func(t *testing.T) {
@@ -164,7 +165,7 @@ func TestGetBuiltin(t *testing.T) {
 		params := []string{"Percy"}
 		copy(s.Expected, "$7\r\nJackson\r\n")
 
-		get.Cmd(params)
+		get.Received(params)
 
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
@@ -175,7 +176,7 @@ func TestGetBuiltin(t *testing.T) {
 		params := []string{"Any"}
 		copy(s.Expected, "$-1\r\n")
 
-		get.Cmd(params)
+		get.Received(params)
 
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
@@ -186,13 +187,13 @@ func TestGetBuiltin(t *testing.T) {
 		params := []string{"Key"}
 		copy(s.Expected, "$-1\r\n")
 
-		get.Cmd(params)
+		get.Received(params)
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
 	})
 }
 
-func TestPingBuiltin(t *testing.T) {
+func TestPingBuiltinReceived(t *testing.T) {
 	s := SetupFilesRDWR{}
 	s.config(nil)
 
@@ -201,11 +202,28 @@ func TestPingBuiltin(t *testing.T) {
 		params := []string{"ping"}
 		copy(s.Expected, "+PONG\r\n")
 
-		ping.Cmd(params)
+		ping.Received(params)
 
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
 	})
+}
+
+func TestPingBuiltinRequest(t *testing.T) {
+	s := SetupFilesRDWR{}
+	s.config(nil)
+
+	t.Run("Test ping with string 'ping'", func(t *testing.T) {
+		ping := Ping{Conn: s.Conn}
+		params := []string{"ping"}
+		copy(s.Expected, "*1\r\n$4\r\nPING\r\n")
+
+		ping.Request(params)
+
+		compareStrings(t, s.Expected, s.Out)
+		s.reset()
+	})
+
 }
 
 func BenchmarkPingBuiltin(b *testing.B) {
@@ -217,7 +235,7 @@ func BenchmarkPingBuiltin(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		ping := Ping{Conn: s.Conn}
 
-		ping.Cmd(params)
+		ping.Received(params)
 		s.reset()
 	}
 }
@@ -226,23 +244,23 @@ func TestEchoBuiltin(t *testing.T) {
 	s := SetupFilesRDWR{}
 	s.config(nil)
 
-	t.Run("Test pass a \"hey\" string", func (t *testing.T) {
+	t.Run("Test pass a \"hey\" string", func(t *testing.T) {
 		echo := Echo{Conn: s.Conn}
 		params := []string{"hey"}
 		copy(s.Expected, "+hey\r\n")
 
-		echo.Cmd(params)
+		echo.Received(params)
 
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
 	})
 
-	t.Run("Test pass a \"hey\" string", func (t *testing.T) {
+	t.Run("Test pass a \"hey\" string", func(t *testing.T) {
 		echo := Echo{Conn: s.Conn}
 		params := []string{"hey", "ho"}
 		copy(s.Expected, "+hey ho\r\n")
 
-		echo.Cmd(params)
+		echo.Received(params)
 
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
@@ -253,8 +271,8 @@ func compareStrings(t *testing.T, expected, received []byte) {
 	t.Helper()
 	if !reflect.DeepEqual(expected, received) {
 		t.Errorf("expected value: '%s' len: %d cap: %d, but has value: '%s' len: %d cap: %d\n",
-					expected, len(expected), cap(expected),
-					received, len(received), cap(received))
+			expected, len(expected), cap(expected),
+			received, len(received), cap(received))
 	}
 }
 
@@ -269,17 +287,17 @@ func compareSubStringsInString(t *testing.T, expected []string, received []byte)
 }
 
 /*
-	Test Conn struct Mock
+Test Conn struct Mock
 */
 type TConn struct {
-	In []byte
+	In  []byte
 	Out []byte
 }
 
-func (c TConn) Close() error {return nil}
-func (c TConn) SetDeadline(t time.Time) error {return nil}
-func (c TConn) SetReadDeadline(t time.Time) error {return nil}
-func (c TConn) SetWriteDeadline(t time.Time) error {return nil}
+func (c TConn) Close() error                       { return nil }
+func (c TConn) SetDeadline(t time.Time) error      { return nil }
+func (c TConn) SetReadDeadline(t time.Time) error  { return nil }
+func (c TConn) SetWriteDeadline(t time.Time) error { return nil }
 
 func (c TConn) Read(b []byte) (n int, err error) {
 	copy(c.In, b)
@@ -293,37 +311,38 @@ func (c TConn) Write(b []byte) (n int, err error) {
 
 func (c TConn) LocalAddr() net.Addr {
 	return &net.TCPAddr{
-        IP:   net.ParseIP("127.0.0.1"), 
-        Port: 8080,
-    }
+		IP:   net.ParseIP("127.0.0.1"),
+		Port: 8080,
+	}
 }
 
 func (c TConn) RemoteAddr() net.Addr {
 	return &net.TCPAddr{
-        IP:   net.ParseIP("127.0.0.1"), 
-        Port: 8080,
-    }
+		IP:   net.ParseIP("127.0.0.1"),
+		Port: 8080,
+	}
 }
 
 /*
-	Mutex struct Mock
+Mutex struct Mock
 */
-type TMutex struct {}
-func (m TMutex) Lock() {}
-func (m TMutex) Unlock() {}
-func (m TMutex) TryLock() bool {return false}
+type TMutex struct{}
+
+func (m TMutex) Lock()         {}
+func (m TMutex) Unlock()       {}
+func (m TMutex) TryLock() bool { return false }
 
 /*
-	Setup out and in files to put result in vars
+Setup out and in files to put result in vars
 */
 type SetupFilesRDWR struct {
-	In []byte
-	Out []byte
+	In       []byte
+	Out      []byte
 	Expected []byte
-	Conn TConn
-	Env map[string]EnvData
-	Mutex IMutex
-	TimeNow time.Time
+	Conn     TConn
+	Env      map[string]EnvData
+	Mutex    IMutex
+	TimeNow  time.Time
 }
 
 func (s *SetupFilesRDWR) config(data map[string]EnvData) {

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/codecrafters-io/redis-starter-go/app/parser"
 )
 
 type IMutex interface {
@@ -15,7 +16,7 @@ type IMutex interface {
 }
 
 type Builtin interface {
-	Cmd([]string)
+	Received([]string)
 }
 
 type ITime interface {
@@ -92,7 +93,7 @@ type Set struct {
 	Now   time.Time
 }
 
-func (s *Set) Cmd(params []string) {
+func (s *Set) Received(params []string) {
 	flag := false
 	cParams := findNextRedisSerialization(params)
 	if len(cParams) == 4 {
@@ -119,7 +120,7 @@ type Get struct {
 	Now   time.Time
 }
 
-func (g *Get) Cmd(params []string) {
+func (g *Get) Received(params []string) {
 	cparams := findNextRedisSerialization(params)
 	g.Mutex.Lock()
 	data, ok := g.Env[cparams[0]]
@@ -144,7 +145,7 @@ func (e *Info) mapToBulkString(m map[string]string, section string) string {
 	return str
 }
 
-func (e *Info) Cmd(params []string) {
+func (e *Info) Received(params []string) {
 	str := ""
 	cParams := findNextRedisSerialization(params)
 	if len(cParams) > 0 {
@@ -161,19 +162,18 @@ func (e *Info) Cmd(params []string) {
 			str += e.mapToBulkString(v, strings.Title(key))
 		}
 	}
-	str = str[:len(str) - 1]
+	str = str[:len(str)-1]
 	size := len(str)
 	e.Conn.Write([]byte(
 		fmt.Sprintf("$%d\r\n%s\r\n", size, str),
 	))
 }
 
-
 type Echo struct {
 	Conn net.Conn
 }
 
-func (e *Echo) Cmd(params []string) {
+func (e *Echo) Received(params []string) {
 	var str string
 	size := len(params)
 	for i := 0; i < size; i++ {
@@ -190,6 +190,10 @@ type Ping struct {
 	Conn net.Conn
 }
 
-func (p *Ping) Cmd(params []string) {
+func (p *Ping) Request(params []string) {
+	p.Conn.Write([]byte(parser.ArrayEncode([]string{"PING"})))
+}
+
+func (p *Ping) Received(params []string) {
 	p.Conn.Write([]byte("+PONG\r\n"))
 }

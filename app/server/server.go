@@ -1,10 +1,11 @@
 package server
 
 import (
+	"fmt"
 	"net"
-	"fmt"	
 	"strings"
 	"sync"
+
 	"github.com/codecrafters-io/redis-starter-go/app/builtin"
 	"github.com/codecrafters-io/redis-starter-go/app/parser"
 )
@@ -21,19 +22,20 @@ type INetIListen interface {
 
 // struct responsible for implementing the
 // INetIListen interface and call the net.Listen function.
-type NetListen struct {}
-func (l NetListen) Listen(network, address string) (net.Listener, error){
+type NetListen struct{}
+
+func (l NetListen) Listen(network, address string) (net.Listener, error) {
 	return net.Listen(network, address)
 }
 
 type RedisServer struct {
-	Env 		map[string]builtin.EnvData
-	Infos 		map[string]map[string]string
-	Mutex 		sync.Mutex
-	Time 		builtin.ITime
-	Args 		[]string
-	Idx 		int
-	Listener 	net.Listener
+	Env      map[string]builtin.EnvData
+	Infos    map[string]map[string]string
+	Mutex    sync.Mutex
+	Time     builtin.ITime
+	Args     []string
+	Idx      int
+	Listener net.Listener
 }
 
 // functions responsible for insert the server informations
@@ -70,14 +72,17 @@ func (s *RedisServer) defaultInfos() {
 func (s *RedisServer) HandleArgs() {
 	size := len(s.Args)
 	defer s.defaultInfos()
-	for s.Idx = 0; s.Idx < size; s.Idx++{
+	for s.Idx = 0; s.Idx < size; s.Idx++ {
 		switch s.Args[s.Idx] {
-			case "--port":
-				s.Idx++
-				s.insertInfos("server", "port", s.Args[s.Idx])
-			case "--replicaof":
-				s.insertInfos("replication", "role", "slave")
-				s.Idx += 2
+		case "--port":
+			s.Idx++
+			s.insertInfos("server", "port", s.Args[s.Idx])
+		case "--replicaof":
+			s.insertInfos("replication", "role", "slave")
+			s.insertInfos("replication", "master_host", s.Args[s.Idx+1])
+			s.insertInfos("replication", "master_port", s.Args[s.Idx+2])
+			s.insertInfos("replication", "master_link_status", "down")
+			s.Idx += 2
 		}
 	}
 }
@@ -89,9 +94,31 @@ func (s *RedisServer) Listen(nl INetIListen) error {
 	address := strings.Split(serverArgs[2], "=")[1]
 	port := strings.Split(serverArgs[3], "=")[1]
 
-	l, err := nl.Listen(network, address + ":" + port)
-	if err != nil { return err }
+	l, err := nl.Listen(network, address+":"+port)
+	if err != nil {
+		return err
+	}
 	s.Listener = l
+	fmt.Printf("Server listening on %s://%s:%s\n", network, address, port)
+	return nil
+}
+
+func (s *RedisServer) SlaveConnMaster() error {
+	if s.Infos["replication"]["role"] == "slave" {
+		conn, err := net.Dial("tcp",
+			fmt.Sprintf("%s:%s",
+			s.Infos["replication"]["master_host"],
+			s.Infos["replication"]["master_port"],
+		),
+	)
+		if err != nil {
+			return err
+		}
+		defer conn.Close()
+		ping := &builtin.Ping{Conn: conn}
+		fmt.Print("Ping\n")
+		ping.Request([]string{"PING"})
+	} 
 	return nil
 }
 
@@ -126,7 +153,7 @@ func (s *RedisServer) getCommands(conn net.Conn) func(key string) (builtin.Built
 func (s *RedisServer) handleCommand(buf string, conn net.Conn) {
 	var b builtin.Builtin
 	commands := s.getCommands(conn)
-	rpp := parser.RedisProtocolParser{Idx:0}
+	rpp := parser.RedisProtocolParser{Idx: 0}
 	it, _ := rpp.ParserProtocol(buf)
 	cmd := it.([]string)
 	b, ok := commands(strings.ToLower(cmd[0]))
@@ -135,26 +162,7 @@ func (s *RedisServer) handleCommand(buf string, conn net.Conn) {
 		conn.Write([]byte(err))
 		return
 	}
-	// cmd[0] = strings.ToLower(cmd[0])
-	// switch cmd[0] {
-	// 	case "echo":
-	// 		b = &builtin.Echo{Conn: conn}
-	// 	case "ping":
-	// 		b = &builtin.Ping{Conn: conn}
-	// 	case "info":
-	// 		b = &builtin.Info{Conn: conn, Infos: s.Infos}
-	// 	case "get":
-	// 		b = &builtin.Get{Conn: conn, Env: s.Env,
-	// 			Mutex: &s.Mutex, Now: s.Time.Now()}
-	// 	case "set":
-	// 		b = &builtin.Set{Conn: conn, Env: s.Env,
-	// 			Mutex: &s.Mutex, Now: s.Time.Now()}
-	// 	default:
-	// 		err := fmt.Sprintf("-ERR unknown command '%s'\r\n", cmd[0])
-	// 		conn.Write([]byte(err))
-	// 		return
-	// }
-	b.Cmd(cmd[1:])
+	b.Received(cmd[1:])
 }
 
 func (s *RedisServer) handleClient(conn net.Conn) {
