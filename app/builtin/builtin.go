@@ -136,7 +136,7 @@ type Info struct {
 	Infos map[string]map[string]string
 }
 
-func (e *Info) mapToRedisString(m map[string]string, section string) string {
+func (e *Info) mapToRedisString(m map[string]string) string {
 	str := ""
 	for k, v := range m {
 		strSize := len(k) + len(v) + len(":")
@@ -153,8 +153,7 @@ func (e *Info) Cmd(params []string) () {
 		for _, v := range cParams {
 			section := e.Infos[strings.ToLower(v)]
 			listSize += len(section)
-			str = e.mapToRedisString(section,
-			strings.Title(strings.ToLower(v)))
+			str = e.mapToRedisString(section)
 		}
 	} else {
 		if len(e.Infos) == 0 {
@@ -162,8 +161,8 @@ func (e *Info) Cmd(params []string) () {
 		}
 		for key, v := range e.Infos {
 			listSize += len(v) + 1
-			str := fmt.Sprintf("$%d\r\n%s\r\n", len("# " + key), "# " + key)
-			str += e.mapToRedisString(v, strings.Title(key))
+			str += fmt.Sprintf("$%d\r\n%s\r\n", len("# " + key), "# " + strings.Title(key))
+			str += e.mapToRedisString(v)
 		}
 	}
 	if listSize > 1 {
