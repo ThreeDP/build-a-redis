@@ -24,7 +24,7 @@ func TestInfoBuiltin(t *testing.T) {
 		}
 		info := Info{Conn: s.Conn, Infos: i}
 		params := []string{}
-		copy(s.Expected, "*2\r\n$13\r\n# Replication\r\n$11\r\nrole:master\r\n")
+		copy(s.Expected, "$26\r\n# Replication\n\nrole:master\r\n")
 
 		info.Cmd(params)
 
@@ -40,7 +40,7 @@ func TestInfoBuiltin(t *testing.T) {
 		}
 		info := Info{Conn: s.Conn, Infos: i}
 		params := []string{"RepLication"}
-		copy(s.Expected, "$10\r\nrole:slave\r\n")
+		copy(s.Expected, "$25\r\n# Replication\n\nrole:slave\r\n")
 
 		info.Cmd(params)
 
@@ -48,11 +48,17 @@ func TestInfoBuiltin(t *testing.T) {
 		s.reset()
 	})
 
-	t.Run("Test Info command without Infos values inside", func(t *testing.T) {
-		i := map[string]map[string]string{}
+	t.Run("Test Info command with replication arg more keys", func(t *testing.T) {
+		i := map[string]map[string]string{
+			"replication": {
+				"role":"slave",
+				"master_replid":"8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb",
+				"master_repl_offset":"0",
+			},
+		}
 		info := Info{Conn: s.Conn, Infos: i}
-		params := []string{}
-		copy(s.Expected, "$-1\r\n")
+		params := []string{"RepLication"}
+		copy(s.Expected, "$101\r\n# Replication\n\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:0\r\n")
 
 		info.Cmd(params)
 
