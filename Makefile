@@ -9,10 +9,17 @@ all:
 # Run tests
 t: $(TEST_PATH)
 
+# $(TEST_PATH):
+# 	@echo "[================ RUN TEST $@ ================]"
+# 	@cd $@ && go test
+# 	@echo
+
 $(TEST_PATH):
 	@echo "[================ RUN TEST $@ ================]"
 	@cd $@ && go test
+	@cd $@ && go test -race -coverprofile=$(subst app/,,$@).txt -covermode=atomic
 	@echo
+
 
 # $(TEST_PATH):
 # 	@echo "[================ RUN TEST $@ ================]"

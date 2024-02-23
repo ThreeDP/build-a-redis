@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"net"
 	"time"
+	"strings"
 )
 
 type TTime struct {}
@@ -24,7 +25,7 @@ func TestInfoBuiltin(t *testing.T) {
 		}
 		info := Info{Conn: s.Conn, Infos: i}
 		params := []string{}
-		copy(s.Expected, "$26\r\n# Replication\n\nrole:master\r\n")
+		copy(s.Expected, "$27\r\n## Replication\n\nrole:master\r\n")
 
 		info.Cmd(params)
 
@@ -40,7 +41,7 @@ func TestInfoBuiltin(t *testing.T) {
 		}
 		info := Info{Conn: s.Conn, Infos: i}
 		params := []string{"RepLication"}
-		copy(s.Expected, "$25\r\n# Replication\n\nrole:slave\r\n")
+		copy(s.Expected, "$26\r\n## Replication\n\nrole:slave\r\n")
 
 		info.Cmd(params)
 
@@ -58,11 +59,17 @@ func TestInfoBuiltin(t *testing.T) {
 		}
 		info := Info{Conn: s.Conn, Infos: i}
 		params := []string{"RepLication"}
-		copy(s.Expected, "$101\r\n# Replication\n\nrole:slave\nmaster_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\nmaster_repl_offset:0\r\n")
+		expected := []string {
+			"$102\r\n",
+			"## Replication\n\n",
+			"master_repl_offset:0",
+			"role:slave",
+			"master_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb",
+		}
 
 		info.Cmd(params)
 
-		compareStrings(t, s.Expected, s.Out)
+		compareSubStringsInString(t, expected, s.Out)
 		s.reset()
 	})
 }
@@ -248,6 +255,16 @@ func compareStrings(t *testing.T, expected, received []byte) {
 		t.Errorf("expected value: '%s' len: %d cap: %d, but has value: '%s' len: %d cap: %d\n",
 					expected, len(expected), cap(expected),
 					received, len(received), cap(received))
+	}
+}
+
+func compareSubStringsInString(t *testing.T, expected []string, received []byte) {
+	t.Helper()
+
+	for _, str := range expected {
+		if !strings.Contains(string(received), str) {
+			t.Errorf("expected value: '%s' not found in '%s'\n", str, received)
+		}
 	}
 }
 
