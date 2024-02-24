@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/codecrafters-io/redis-starter-go/app/define"
 	"github.com/codecrafters-io/redis-starter-go/app/builtin"
 )
 
@@ -111,7 +112,7 @@ func TestHandleArgs(t *testing.T) {
 		s.HandleArgs()
 
 		checkInfosMap(t, s.Infos["replication"], "role", "master")
-		checkInfosMap(t, s.Infos["server"], "port", DEFAULPORT)
+		checkInfosMap(t, s.Infos["server"], "port", define.DEFAULPORT)
 	})
 
 	t.Run("Test HandleArgs with flag --port", func(t *testing.T) {

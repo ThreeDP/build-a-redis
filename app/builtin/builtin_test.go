@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/codecrafters-io/redis-starter-go/app/define"
 )
 
 type TTime struct{}
@@ -346,9 +348,9 @@ type SetupFilesRDWR struct {
 }
 
 func (s *SetupFilesRDWR) config(data map[string]EnvData) {
-	s.In = make([]byte, BUFFERSIZE)
-	s.Out = make([]byte, BUFFERSIZE)
-	s.Expected = make([]byte, BUFFERSIZE)
+	s.In = make([]byte, define.BUFFERSIZE)
+	s.Out = make([]byte, define.BUFFERSIZE)
+	s.Expected = make([]byte, define.BUFFERSIZE)
 	s.Conn = TConn{In: s.In, Out: s.Out}
 	s.Env = data
 	s.Mutex = TMutex{}
@@ -356,8 +358,8 @@ func (s *SetupFilesRDWR) config(data map[string]EnvData) {
 }
 
 func (s *SetupFilesRDWR) reset() {
-	s.Expected = make([]byte, BUFFERSIZE)
-	s.In = make([]byte, BUFFERSIZE)
-	s.Out = make([]byte, BUFFERSIZE)
+	s.Expected = make([]byte, define.BUFFERSIZE)
+	s.In = make([]byte, define.BUFFERSIZE)
+	s.Out = make([]byte, define.BUFFERSIZE)
 	s.Conn = TConn{In: s.In, Out: s.Out}
 }

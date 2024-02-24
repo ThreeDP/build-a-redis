@@ -14,13 +14,14 @@ func main() {
 		Args: os.Args,
 		Infos: make(map[string]map[string]string),
 	}
-
+	
 	err := s.Listen(server.NetListen{})
 	if err != nil {
 		fmt.Println("Failed to bind to port " + s.Infos["server"]["port"])
 		os.Exit(1)
 	}
 	
+	s.SetCommands()
 	err = s.SlaveConnMaster()
 	if err != nil {
 		fmt.Println("Failed to bind to port " + s.Infos["replication"]["master_port"])
