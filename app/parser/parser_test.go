@@ -5,6 +5,8 @@ import (
 	"testing"
 )
 
+
+
 func TestParserRedisProtocol(t *testing.T) {
 	t.Run("Test parser the bulk string $4hello\\r\\n", func(t *testing.T) {
 		rrp := RedisProtocolParser{Idx:0}
