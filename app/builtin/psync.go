@@ -17,6 +17,7 @@ func (p *PSync) Response(params []string) {
 	p.Infos["replication"]["master_replid"],
 	p.Infos["replication"]["master_repl_offset"])
 	p.Conn.Write([]byte(str))
+	SendRDBData(p.Conn)
 }
 
 func (p *PSync) SetConn(conn net.Conn) {
