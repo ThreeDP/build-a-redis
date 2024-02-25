@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func (e *Echo) Received(params []string) {
+func (e *Echo) Response(params []string) {
 	var str string
 	size := len(params)
 	for i := 0; i < size; i++ {

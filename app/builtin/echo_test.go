@@ -13,7 +13,7 @@ func TestEchoBuiltin(t *testing.T) {
 		params := []string{"hey"}
 		copy(s.Expected, "+hey\r\n")
 
-		echo.Received(params)
+		echo.Response(params)
 
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
@@ -24,7 +24,7 @@ func TestEchoBuiltin(t *testing.T) {
 		params := []string{"hey", "ho"}
 		copy(s.Expected, "+hey ho\r\n")
 
-		echo.Received(params)
+		echo.Response(params)
 
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
@@ -36,7 +36,7 @@ func TestEchoBuiltin(t *testing.T) {
 		params := []string{}
 		copy(s.Expected, "+\r\n")
 
-		echo.Received(params)
+		echo.Response(params)
 
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
@@ -50,6 +50,6 @@ func BenchmarkEchoBuiltin(b *testing.B) {
 	echo := Echo{Conn: s.Conn}
 
 	for i := 0; i < b.N; i++ {
-		echo.Received(params)
+		echo.Response(params)
 	}
 }

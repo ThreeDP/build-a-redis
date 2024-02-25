@@ -19,7 +19,7 @@ func TestSetBuiltin(t *testing.T) {
 		params := []string{"Percy", "Jackson"}
 		copy(s.Expected, "+OK\r\n")
 
-		set.Received(params)
+		set.Response(params)
 
 		data, ok := s.Env[params[0]]
 		checkVarValue(t, ok, data.Value, params[1])
@@ -34,7 +34,7 @@ func TestSetBuiltin(t *testing.T) {
 		params := []string{"Minute", "10Sec", "Px", "100"}
 		copy(s.Expected, "+OK\r\n")
 
-		set.Received(params)
+		set.Response(params)
 
 		data, ok := s.Env[params[0]]
 		checkVarValue(t, ok, data.Value, params[1])
@@ -49,7 +49,7 @@ func TestSetBuiltin(t *testing.T) {
 		params := []string{"Minute", "10Sec", "PX", "100", "$7"}
 		copy(s.Expected, "+OK\r\n")
 
-		set.Received(params)
+		set.Response(params)
 
 		data, ok := s.Env[params[0]]
 		checkVarValue(t, ok, data.Value, params[1])
@@ -70,6 +70,6 @@ func BenchmarkSetBuiltin(b *testing.B) {
 	set := Set{Conn: s.Conn, Env: s.Env, Mutex: s.Mutex, Now: getTime.Now()}
 
 	for i := 0; i < b.N; i++ {
-		set.Received([]string{strconv.Itoa(i), "test"})
+		set.Response([]string{strconv.Itoa(i), "test"})
 	}
 }

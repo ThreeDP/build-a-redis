@@ -12,7 +12,7 @@ type IMutex interface {
 }
 
 type Builtin interface {
-	Received([]string)
+	Response([]string)
 	SetConn(net.Conn)
 	SetTimeNow(time.Time)
 }
@@ -47,11 +47,11 @@ type Info struct {
 }
 
 type Echo struct {
-	Conn  net.Conn
-	Now   time.Time
+	Conn net.Conn
+	Now  time.Time
 }
 
 type Ping struct {
-	Conn  net.Conn
-	Now   time.Time
+	Conn net.Conn
+	Now  time.Time
 }

@@ -18,7 +18,7 @@ func TestInfoBuiltin(t *testing.T) {
 		params := []string{}
 		copy(s.Expected, "$27\r\n## Replication\n\nrole:master\r\n")
 
-		info.Received(params)
+		info.Response(params)
 
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
@@ -34,7 +34,7 @@ func TestInfoBuiltin(t *testing.T) {
 		params := []string{"RepLication"}
 		copy(s.Expected, "$26\r\n## Replication\n\nrole:slave\r\n")
 
-		info.Received(params)
+		info.Response(params)
 
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
@@ -58,7 +58,7 @@ func TestInfoBuiltin(t *testing.T) {
 			"master_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb",
 		}
 
-		info.Received(params)
+		info.Response(params)
 
 		compareSubStringsInString(t, expected, s.Out)
 		s.reset()
@@ -76,8 +76,8 @@ func BenchmarkInfosBuiltin(b *testing.B) {
 		},
 	}
 	info := Info{Conn: s.Conn, Infos: inf}
-	
+
 	for i := 0; i < b.N; i++ {
-		info.Received(params)
+		info.Response(params)
 	}
 }

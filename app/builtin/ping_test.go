@@ -51,6 +51,6 @@ func BenchmarkPingBuiltin(b *testing.B) {
 	ping := Ping{Conn: s.Conn}
 
 	for i := 0; i < b.N; i++ {
-		ping.Received(params)
+		ping.Response(params)
 	}
 }

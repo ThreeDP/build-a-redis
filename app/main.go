@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sync"
 	"github.com/codecrafters-io/redis-starter-go/app/builtin"
 	"github.com/codecrafters-io/redis-starter-go/app/server"
 )
@@ -13,6 +14,7 @@ func main() {
 		Time: builtin.Time{},
 		Args: os.Args,
 		Infos: make(map[string]map[string]string),
+		Mutex: &sync.Mutex{},
 	}
 	
 	err := s.Listen(server.NetListen{})

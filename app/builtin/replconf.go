@@ -11,14 +11,14 @@ import (
 type ReplConf struct {
 	Conn net.Conn
 	Env  map[string]EnvData
-	Now	 time.Time
+	Now  time.Time
 }
 
 func (rc *ReplConf) Request(params []string) {
 	rc.Conn.Write([]byte(parser.ArrayEncode(params)))
 }
 
-func (rc *ReplConf) Received(params []string) {
+func (rc *ReplConf) Response(params []string) {
 	fmt.Println(params)
 	rc.Conn.Write([]byte("+OK\r\n"))
 }

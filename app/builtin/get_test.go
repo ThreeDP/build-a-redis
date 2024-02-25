@@ -17,7 +17,7 @@ func TestGetBuiltin(t *testing.T) {
 		params := []string{"Percy"}
 		copy(s.Expected, "$7\r\nJackson\r\n")
 
-		get.Received(params)
+		get.Response(params)
 
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
@@ -28,7 +28,7 @@ func TestGetBuiltin(t *testing.T) {
 		params := []string{"Any"}
 		copy(s.Expected, "$-1\r\n")
 
-		get.Received(params)
+		get.Response(params)
 
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
@@ -39,7 +39,7 @@ func TestGetBuiltin(t *testing.T) {
 		params := []string{"Key"}
 		copy(s.Expected, "$-1\r\n")
 
-		get.Received(params)
+		get.Response(params)
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
 	})
@@ -55,6 +55,6 @@ func BenchmarkGetBuiltin(b *testing.B) {
 	params := []string{"Percy"}
 
 	for i := 0; i < b.N; i++ {
-		get.Received(params)
+		get.Response(params)
 	}
 }

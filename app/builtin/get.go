@@ -1,9 +1,9 @@
 package builtin
 
 import (
+	"fmt"
 	"net"
 	"time"
-	"fmt"
 
 	"github.com/codecrafters-io/redis-starter-go/app/parser"
 )
@@ -15,7 +15,7 @@ type Get struct {
 	Now   time.Time
 }
 
-func (g *Get) Received(params []string) {
+func (g *Get) Response(params []string) {
 	cparams := parser.FindNextRedisSerialization(params)
 	g.Mutex.Lock()
 	data, ok := g.Env[cparams[0]]

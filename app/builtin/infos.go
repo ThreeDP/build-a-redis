@@ -1,10 +1,11 @@
 package builtin
 
 import (
-	"net"
-	"time"
 	"fmt"
+	"net"
 	"strings"
+	"time"
+
 	"github.com/codecrafters-io/redis-starter-go/app/parser"
 )
 
@@ -16,7 +17,7 @@ func (e *Info) mapToBulkString(m map[string]string, section string) string {
 	return str
 }
 
-func (e *Info) Received(params []string) {
+func (e *Info) Response(params []string) {
 	str := ""
 	cParams := parser.FindNextRedisSerialization(params)
 	if len(cParams) > 0 {

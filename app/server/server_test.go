@@ -2,12 +2,13 @@ package server
 
 import (
 	"net"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/codecrafters-io/redis-starter-go/app/define"
 	"github.com/codecrafters-io/redis-starter-go/app/builtin"
+	"github.com/codecrafters-io/redis-starter-go/app/define"
 )
 
 type TTime struct {}
@@ -46,12 +47,13 @@ func checkInfosMap(t *testing.T,
 	}
 }
 
-func setupRedisServer() RedisServer {
+func setupRedisServer(env map[string]builtin.EnvData) RedisServer {
 	return RedisServer{
-		Env: make(map[string]builtin.EnvData),
+		Env: env,
 		Time: TTime{},
 		Args: []string{}, 		//os.Args[1:]
 		Infos: make(map[string]map[string]string),
+		Mutex: builtin.TMutex{},
 	}
 }
 
@@ -71,7 +73,7 @@ func validateSeverAddr(t *testing.T, s *RedisServer, expectedAddr *TListener, er
 func TestListenServer(t *testing.T) {
 	
 	t.Run("Test Listen in default", func(t *testing.T) {
-		s := setupRedisServer()
+		s := setupRedisServer(nil)
 		s.Args = []string{}
 		expectedAddr := TListener{
 			Address: &TAddr{Netw: "tcp",
@@ -85,7 +87,7 @@ func TestListenServer(t *testing.T) {
 	})
 
 	t.Run("Test Listen in custom port", func(t *testing.T) {
-		s := setupRedisServer()
+		s := setupRedisServer(nil)
 		s.Args = []string{"--port", "6380"}
 		expectedAddr := TListener{
 			Address: &TAddr{Netw: "tcp",
@@ -99,7 +101,7 @@ func TestListenServer(t *testing.T) {
 	})
 
 	t.Run("Test Listen with flags --port --replicaof", func(t *testing.T) {
-		s := setupRedisServer()
+		s := setupRedisServer(nil)
 		s.Args = []string{"--port", "6380", "--replicaof", "0.0.0.0", "6379" }
 		expectedAddr := TListener{
 			Address: &TAddr{Netw: "tcp",
@@ -114,7 +116,7 @@ func TestListenServer(t *testing.T) {
 
 func TestHandleArgs(t *testing.T) {
 	t.Run("Test HandleArgs with no flags", func(t *testing.T) {
-		s := setupRedisServer()
+		s := setupRedisServer(nil)
 		s.Args = []string{""}
 
 		s.HandleArgs()
@@ -124,7 +126,7 @@ func TestHandleArgs(t *testing.T) {
 	})
 
 	t.Run("Test HandleArgs with flag --port", func(t *testing.T) {
-		s := setupRedisServer()
+		s := setupRedisServer(nil)
 		s.Args = []string{"--port", "7589"}
 
 		s.HandleArgs()
@@ -134,7 +136,7 @@ func TestHandleArgs(t *testing.T) {
 	})
 
 	t.Run("Test HandleArgs with flag --port --replicaof ", func(t *testing.T) {
-		s := setupRedisServer()
+		s := setupRedisServer(nil)
 		s.Args = []string{"--port", "8000", "--replicaof", "localhost", "8000"}
 
 		s.HandleArgs()
@@ -145,7 +147,7 @@ func TestHandleArgs(t *testing.T) {
 }
 
 func TestSetCommands(t *testing.T) {
-	s := setupRedisServer()
+	s := setupRedisServer(nil)
 
 	t.Run("Test SetCommands with 'echo' command", func(t *testing.T) {
 		s.SetCommands()
@@ -228,3 +230,72 @@ func TestSetCommands(t *testing.T) {
 	})
 }
 
+func TestHandleRequest(t *testing.T) {
+	tm := TTime{}
+	s := setupRedisServer(map[string]builtin.EnvData{
+		"Percy": {Value: "Jackson", Expiry: tm.Now(), MustExpire: false},
+	})
+	conn := builtin.TConn{}
+	s.SetCommands()
+
+	t.Run("Test *2\\r\\n$4\\r\\necho\\r\\n$2\\r\\nhi\\r\\n command", func(t *testing.T) {
+		conn.NewConn()
+		expected := make([]byte, define.BUFFERSIZE)
+		buf := "*2\r\n$4\r\necho\r\n$2\r\nhi\r\n"
+		copy(expected, "+hi\r\n")
+
+		s.HandleRequest(&conn, buf)
+
+		if !reflect.DeepEqual(conn.Out, expected) {
+			t.Errorf("Expected '%v', but has '%v'\n", string(expected), string(conn.Out))
+		}
+	})
+
+	t.Run("Test *2\\r\\n$3\\r\\nget\\r\\n$5\\r\\nPercy\\r\\n command", func(t *testing.T) {
+		conn.NewConn()
+		expected := make([]byte, define.BUFFERSIZE)
+		buf := "*2\r\n$3\r\nget\r\n$5\r\nPercy\r\n"
+		copy(expected, "$7\r\nJackson\r\n")
+
+		s.HandleRequest(&conn, buf)
+		if !reflect.DeepEqual(conn.Out, expected) {
+			t.Errorf("Expected '%v', but has '%v'\n", string(expected), string(conn.Out))
+		}
+	})
+
+	t.Run("Test *2\\r\\n$3\\r\\nget\\r\\n$7\\r\\nunknown\\r\\n command", func(t *testing.T) {	
+		conn.NewConn()
+		expected := make([]byte, define.BUFFERSIZE)
+		buf := "*2\r\n$3\r\nget\r\n$7\r\nunknown\r\n"
+		copy(expected, "$-1\r\n")
+
+		s.HandleRequest(&conn, buf)
+		if !reflect.DeepEqual(conn.Out, expected) {
+			t.Errorf("Expected '%v', but has '%v'\n", string(expected), string(conn.Out))
+		}
+	})
+
+	t.Run("Test *3\\r\\n$3\\r\\nset\\r\\n$6\\r\\junior\\r\\n$4\r\\nluis\r\n command", func(t *testing.T) {
+		conn.NewConn()
+		expected := make([]byte, define.BUFFERSIZE)
+		buf := "*3\r\n$3\r\nset\r\n$6\r\njunior\r\n$4\r\nluis\r\n"
+		copy(expected, "+OK\r\n")
+
+		s.HandleRequest(&conn, buf)
+		if !reflect.DeepEqual(conn.Out, expected) {
+			t.Errorf("Expected '%v', but has '%v'\n", string(expected), string(conn.Out))
+		}
+	})
+
+	t.Run("Test *2\\r\\n$4\\r\\nunknown\\r\\n$3\\r\\n123\\r\\n command", func(t *testing.T) {
+		conn.NewConn()
+		expected := make([]byte, define.BUFFERSIZE)
+		buf := "*2\r\n$7\r\nunknown\r\n$3\r\n123\r\n"
+		copy(expected, "-ERR unknown command 'unknown'\r\n")
+
+		s.HandleRequest(&conn, buf)
+		if !reflect.DeepEqual(conn.Out, expected) {
+			t.Errorf("Expected '%v', but has '%v'\n", string(expected), string(conn.Out))
+		}
+	})
+}

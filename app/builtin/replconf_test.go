@@ -14,7 +14,7 @@ func TestReplConfBuiltin(t *testing.T) {
 		params := []string{"listening-port", "6380"}
 		copy(s.Expected, "+OK\r\n")
 
-		rc.Received(params)
+		rc.Response(params)
 
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
@@ -25,7 +25,7 @@ func TestReplConfBuiltin(t *testing.T) {
 		params := []string{"capa", "npsync2"}
 		copy(s.Expected, "+OK\r\n")
 
-		rc.Received(params)
+		rc.Response(params)
 
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()

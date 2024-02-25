@@ -9,7 +9,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/parser"
 )
 
-func (s *Set) Received(params []string) {
+func (s *Set) Response(params []string) {
 	flag := false
 	cParams := parser.FindNextRedisSerialization(params)
 	if len(cParams) == 4 {

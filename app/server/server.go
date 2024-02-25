@@ -3,12 +3,11 @@ package server
 import (
 	"fmt"
 	"net"
-	"time"
 	"strings"
-	"sync"
+	"time"
 
-	"github.com/codecrafters-io/redis-starter-go/app/define"
 	"github.com/codecrafters-io/redis-starter-go/app/builtin"
+	"github.com/codecrafters-io/redis-starter-go/app/define"
 	"github.com/codecrafters-io/redis-starter-go/app/parser"
 )
 
@@ -27,15 +26,15 @@ func (l NetListen) Listen(network, address string) (net.Listener, error) {
 }
 
 type RedisServer struct {
-	Env      	map[string]builtin.EnvData
-	Infos    	map[string]map[string]string
-	Mutex    	sync.Mutex
-	Time     	builtin.ITime
-	Args     	[]string
-	Idx      	int
-	Listener 	net.Listener
-	Action		func(net.Conn, string)
-	Commands	func(key string, conn net.Conn, now time.Time) (builtin.Builtin, bool)
+	Env      map[string]builtin.EnvData
+	Infos    map[string]map[string]string
+	Mutex    builtin.IMutex
+	Time     builtin.ITime
+	Args     []string
+	Idx      int
+	Listener net.Listener
+	Action   func(net.Conn, string)
+	Commands func(key string, conn net.Conn, now time.Time) (builtin.Builtin, bool)
 }
 
 // functions responsible for insert the server informations
@@ -105,11 +104,11 @@ func (s *RedisServer) Listen(nl INetIListen) error {
 
 func (s *RedisServer) SetCommands() {
 	commands := map[string]builtin.Builtin{
-		"echo": &builtin.Echo{Conn: nil, Now: time.Time{}},
-		"ping": &builtin.Ping{Conn: nil, Now: time.Time{}},
-		"info": &builtin.Info{Infos: s.Infos, Conn: nil, Now: time.Time{}},
-		"get": &builtin.Get{Mutex: &s.Mutex, Env: s.Env, Conn: nil, Now: time.Time{}},
-		"set": &builtin.Set{Mutex: &s.Mutex, Env: s.Env, Conn: nil, Now: time.Time{}},
+		"echo":     &builtin.Echo{Conn: nil, Now: time.Time{}},
+		"ping":     &builtin.Ping{Conn: nil, Now: time.Time{}},
+		"info":     &builtin.Info{Infos: s.Infos, Conn: nil, Now: time.Time{}},
+		"get":      &builtin.Get{Mutex: s.Mutex, Env: s.Env, Conn: nil, Now: time.Time{}},
+		"set":      &builtin.Set{Mutex: s.Mutex, Env: s.Env, Conn: nil, Now: time.Time{}},
 		"replconf": &builtin.ReplConf{Conn: nil, Env: s.Env, Now: time.Time{}},
 	}
 	s.Commands = func(key string, conn net.Conn, now time.Time) (builtin.Builtin, bool) {
@@ -126,8 +125,8 @@ func (s *RedisServer) SlaveConnMaster() error {
 	if s.Infos["replication"]["role"] == "slave" {
 		conn, err := net.Dial("tcp",
 			fmt.Sprintf("%s:%s",
-			s.Infos["replication"]["master_host"],
-			s.Infos["replication"]["master_port"],
+				s.Infos["replication"]["master_host"],
+				s.Infos["replication"]["master_port"],
 			),
 		)
 		if err != nil {
@@ -146,19 +145,18 @@ func (s *RedisServer) SlaveConnMaster() error {
 	return nil
 }
 
-
 func (s *RedisServer) HandleRequest(conn net.Conn, buf string) {
 	var b builtin.Builtin
 	rpp := parser.RedisProtocolParser{Idx: 0}
 	it, _ := rpp.ParserProtocol(buf)
 	cmd := it.([]string)
-	b, ok := s.Commands(strings.ToLower(cmd[0]), conn, s.Time.Now())
-	if !ok {
+	b, ok := s.Commands(cmd[0], conn, s.Time.Now())
+	if !ok { // Error Response
 		err := fmt.Sprintf("-ERR unknown command '%s'\r\n", cmd[0])
 		conn.Write([]byte(err))
 		return
 	}
-	b.Received(cmd[1:])
+	b.Response(cmd[1:])
 }
 
 func (s *RedisServer) HandleResponse(conn net.Conn, buf string) {
@@ -168,7 +166,7 @@ func (s *RedisServer) HandleResponse(conn net.Conn, buf string) {
 	fmt.Printf("%s\n", cmd[0])
 }
 
-func (s *RedisServer) Handler(conn net.Conn, handler func (net.Conn, string)) {
+func (s *RedisServer) Handler(conn net.Conn, handler func(net.Conn, string)) {
 	defer conn.Close()
 	buf := make([]byte, 1024)
 	s.Action = handler
