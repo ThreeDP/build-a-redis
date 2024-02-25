@@ -202,14 +202,16 @@ func (s *RedisServer) Handler2(conn net.Conn, handler func(net.Conn, string)) {
 	buf := make([]byte, 1024)
 	s.Action = handler
 
-	n, err := conn.Read(buf)
-	if err != nil {
-		return
+	for {
+		n, err := conn.Read(buf)
+		if err != nil {
+			return
+		}
+		if n == 0 {
+			return
+		}
+		s.Action(conn, string(buf))
 	}
-	if n == 0 {
-		return
-	}
-	s.Action(conn, string(buf))
 }
 
 func (s *RedisServer) Run() {
