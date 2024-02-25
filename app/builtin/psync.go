@@ -1,8 +1,10 @@
 package builtin
 
 import (
-	"time"
+	"fmt"
 	"net"
+	"time"
+
 	"github.com/codecrafters-io/redis-starter-go/app/parser"
 )
 
@@ -11,7 +13,8 @@ func (p *PSync) Request(params []string) {
 }
 
 func (p *PSync) Response(params []string) {
-	p.Conn.Write([]byte("+FULLRESYNC <REPL_ID> 0\r\n"))
+	str := fmt.Sprintf("+FULLRESYNC %s 0\r\n", p.Infos["replication"]["master_replid"])
+	p.Conn.Write([]byte(str))
 }
 
 func (p *PSync) SetConn(conn net.Conn) {

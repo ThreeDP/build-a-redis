@@ -60,4 +60,5 @@ type Ping struct {
 type PSync struct {
 	Conn net.Conn
 	Now  time.Time
+	Infos map[string]map[string]string
 }

@@ -110,7 +110,7 @@ func (s *RedisServer) SetCommands() {
 		"get":      &builtin.Get{Mutex: s.Mutex, Env: s.Env, Conn: nil, Now: time.Time{}},
 		"set":      &builtin.Set{Mutex: s.Mutex, Env: s.Env, Conn: nil, Now: time.Time{}},
 		"replconf": &builtin.ReplConf{Conn: nil, Env: s.Env, Now: time.Time{}},
-		"psync":	&builtin.PSync{Conn: nil, Now: time.Time{}},
+		"psync":	&builtin.PSync{Conn: nil, Now: time.Time{}, Infos: s.Infos},
 	}
 	s.Commands = func(key string, conn net.Conn, now time.Time) (builtin.Builtin, bool) {
 		elem, ok := commands[strings.ToLower(key)]
