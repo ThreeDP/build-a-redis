@@ -136,7 +136,7 @@ func (s *RedisServer) SlaveConnMaster() error {
 		defer conn.Close()
 		ping := &builtin.Ping{Conn: conn}
 		ping.Request([]string{"PING"})
-		s.Handler(conn, s.HandleResponse)
+		s.Handler2(conn, s.HandleResponse)
 		// rc := &builtin.ReplConf{Conn: conn}
 		// rc.Request([]string{"REPLCONF", "listening-port", s.Infos["server"]["port"]})
 		// s.Handler(conn, s.HandleResponse)
@@ -182,6 +182,24 @@ func (s *RedisServer) Handler(conn net.Conn, handler func(net.Conn, string)) {
 		}
 		s.Action(conn, string(buf))
 	}
+}
+
+func (s *RedisServer) Handler2(conn net.Conn, handler func(net.Conn, string)) {
+	defer conn.Close()
+	buf := make([]byte, 1024)
+	s.Action = handler
+
+	// for {
+		fmt.Printf("oi\n")
+		n, err := conn.Read(buf)
+		if err != nil {
+			return
+		}
+		if n == 0 {
+			return
+		}
+		s.Action(conn, string(buf))
+	// }
 }
 
 func (s *RedisServer) Run() {
