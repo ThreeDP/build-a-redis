@@ -113,7 +113,7 @@ func (s *RedisServer) SetCommands() {
 		"replconf": &builtin.ReplConf{Conn: nil, Env: s.Env, Now: time.Time{}},
 	}
 	s.Commands = func(key string, conn net.Conn, now time.Time) (builtin.Builtin, bool) {
-		elem, ok := commands[key]
+		elem, ok := commands[strings.ToLower(key)]
 		if ok {
 			elem.SetConn(conn)
 			elem.SetTimeNow(now)
