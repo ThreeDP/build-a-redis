@@ -29,6 +29,9 @@ func (s *Set) Response(params []string) {
 	s.Conn.Write([]byte("+OK\r\n"))
 }
 
+func (s *Set) Request(params []string) {
+}
+
 func (s *Set) SetConn(conn net.Conn) {
 	s.Conn = conn
 }

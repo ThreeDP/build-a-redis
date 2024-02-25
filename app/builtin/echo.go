@@ -18,6 +18,10 @@ func (e *Echo) Response(params []string) {
 	e.Conn.Write([]byte("+" + str + "\r\n"))
 }
 
+func (e *Echo) Request(params []string) {
+	
+}
+
 func (e *Echo) SetConn(conn net.Conn) {
 	e.Conn = conn
 }

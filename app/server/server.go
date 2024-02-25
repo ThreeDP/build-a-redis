@@ -121,46 +121,40 @@ func (s *RedisServer) SetCommands() {
 	}
 }
 
+func (s *RedisServer) HandShake() error {
+	conn, err := net.Dial("tcp",
+	fmt.Sprintf("%s:%s",
+		s.Infos["replication"]["master_host"],
+		s.Infos["replication"]["master_port"],
+	),
+	)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	handShake := []builtin.Builtin{
+		&builtin.Ping{Conn: conn},
+		&builtin.ReplConf{Conn: conn},
+		&builtin.ReplConf{Conn: conn},
+	}
+
+	params := [][]string{
+		{"PING"},
+		{"REPLCONF", "listening-port", s.Infos["server"]["port"]},
+		{"REPLCONF", "capa", "npsync2"},
+	}
+
+	for i, h := range handShake {
+		h.Request(params[i])
+		s.Handler2(conn, s.HandleResponse)
+	}
+	return nil
+}
+
 func (s *RedisServer) SlaveConnMaster() error {
 	fmt.Printf("Connecting to %s\n", s.Infos["replication"]["role"])
 	if s.Infos["replication"]["role"] == "slave" {
-		conn, err := net.Dial("tcp",
-			fmt.Sprintf("%s:%s",
-				s.Infos["replication"]["master_host"],
-				s.Infos["replication"]["master_port"],
-			),
-		)
-		if err != nil {
-			return err
-		}
-		defer conn.Close()
-		ping := &builtin.Ping{Conn: conn}
-		ping.Request([]string{"PING"})
-		s.Handler2(conn, s.HandleResponse)
-		conn, err = net.Dial("tcp",
-			fmt.Sprintf("%s:%s",
-				s.Infos["replication"]["master_host"],
-				s.Infos["replication"]["master_port"],
-			),
-		)
-		if err != nil {
-			return err
-		}
-		rc := &builtin.ReplConf{Conn: conn}
-		rc.Request([]string{"REPLCONF", "listening-port", s.Infos["server"]["port"]})
-		s.Handler2(conn, s.HandleResponse)
-		conn, err = net.Dial("tcp",
-		fmt.Sprintf("%s:%s",
-		s.Infos["replication"]["master_host"],
-				s.Infos["replication"]["master_port"],
-			),
-		)
-		if err != nil {
-			return err
-		}
-		rc = &builtin.ReplConf{Conn: conn}
-		rc.Request([]string{"REPLCONF", "capa", "npsync2"})
-		s.Handler2(conn, s.HandleResponse)
+		go s.HandShake()
 	}
 	return nil
 }
@@ -191,6 +185,7 @@ func (s *RedisServer) Handler(conn net.Conn, handler func(net.Conn, string)) {
 	buf := make([]byte, 1024)
 	s.Action = handler
 
+	fmt.Printf("Connection from %s\n", s.Infos["replcation"]["role"])
 	for {
 		n, err := conn.Read(buf)
 		if err != nil {
@@ -204,20 +199,17 @@ func (s *RedisServer) Handler(conn net.Conn, handler func(net.Conn, string)) {
 }
 
 func (s *RedisServer) Handler2(conn net.Conn, handler func(net.Conn, string)) {
-	defer conn.Close()
 	buf := make([]byte, 1024)
 	s.Action = handler
 
-	// for {
-		n, err := conn.Read(buf)
-		if err != nil {
-			return
-		}
-		if n == 0 {
-			return
-		}
-		s.Action(conn, string(buf))
-	// }
+	n, err := conn.Read(buf)
+	if err != nil {
+		return
+	}
+	if n == 0 {
+		return
+	}
+	s.Action(conn, string(buf))
 }
 
 func (s *RedisServer) Run() {

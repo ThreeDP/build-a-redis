@@ -13,6 +13,7 @@ type IMutex interface {
 
 type Builtin interface {
 	Response([]string)
+	Request([]string)
 	SetConn(net.Conn)
 	SetTimeNow(time.Time)
 }

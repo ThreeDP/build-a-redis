@@ -41,6 +41,9 @@ func (e *Info) Response(params []string) {
 	))
 }
 
+func (e *Info) Request(params []string) {
+}
+
 func (i *Info) SetConn(conn net.Conn) {
 	i.Conn = conn
 }

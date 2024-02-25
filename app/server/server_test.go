@@ -351,11 +351,11 @@ func TestHandleRequest(t *testing.T) {
 }
 
 
-func TestHandleResponse(t *testing.T) {
-	tm := TTime{}
-	s := setupRedisServer(map[string]builtin.EnvData{
-		"Percy": {Value: "Jackson", Expiry: tm.Now(), MustExpire: false},
-	})
-	conn := TConn{}
-	s.SetCommands()
-}
+// func TestHandleResponse(t *testing.T) {
+// 	tm := TTime{}
+// 	s := setupRedisServer(map[string]builtin.EnvData{
+// 		"Percy": {Value: "Jackson", Expiry: tm.Now(), MustExpire: false},
+// 	})
+// 	conn := TConn{}
+// 	s.SetCommands()
+// }

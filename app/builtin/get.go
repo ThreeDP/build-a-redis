@@ -27,6 +27,9 @@ func (g *Get) Response(params []string) {
 	g.Conn.Write([]byte(fmt.Sprintf("$%d\r\n%s\r\n", len(data.Value), data.Value)))
 }
 
+func (g *Get) Request(params []string) {
+}
+
 func (g *Get) SetConn(conn net.Conn) {
 	g.Conn = conn
 }
