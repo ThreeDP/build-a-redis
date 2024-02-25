@@ -17,9 +17,9 @@ func (t TTime) Now() time.Time {
 }
 
 func TestTimeStructNow(t *testing.T) {
-	time := TTime{}
-	expected := time.Now()
-	checkVarDate(t, expected, time.Now())
+	tm := TTime{}
+	expected := tm.Now()
+	checkVarDate(t, expected, time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC))
 }
 
 func checkVarValue(t *testing.T, ok bool, received, expected string) {
