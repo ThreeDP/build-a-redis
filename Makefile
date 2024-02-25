@@ -1,7 +1,7 @@
 NAME			:= 	server.tmp
 PROJECT_PATH	:= 	./app/
 DEFAUL_PORT		:= 	6379
-HOST_MASTER		:= 	0.0.0.0
+HOST_MASTER		:= 	localhost
 PORT			:= 	6377
 
 all:

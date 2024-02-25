@@ -62,7 +62,7 @@ func (s *RedisServer) defaultInfos() {
 		"name=%s,bind=%s,bind=%s,port=%s",
 		"tcp",
 		"*",
-		"0.0.0.0",
+		"localhost",
 		s.Infos["server"]["port"],
 	)
 	s.insertInfos("server", "listener0", listener)
@@ -122,6 +122,7 @@ func (s *RedisServer) SetCommands() {
 }
 
 func (s *RedisServer) SlaveConnMaster() error {
+	fmt.Printf("Connecting to %s\n", s.Infos["replication"]["role"])
 	if s.Infos["replication"]["role"] == "slave" {
 		conn, err := net.Dial("tcp",
 			fmt.Sprintf("%s:%s",
