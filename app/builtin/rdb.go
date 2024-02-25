@@ -8,7 +8,7 @@ import (
 )
 
 func SendRDBData(conn net.Conn) {
-	rdb := "./rdb/data.rdb"
+	rdb := "./app/rdb/data.rdb"
 	b64, err := ioutil.ReadFile(rdb)
 	if err != nil {
 		fmt.Printf("Error reading file: %s\n", err)
