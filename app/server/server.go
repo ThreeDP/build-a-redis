@@ -139,9 +139,9 @@ func (s *RedisServer) SlaveConnMaster() error {
 		s.Handler2(conn, s.HandleResponse)
 		rc := &builtin.ReplConf{Conn: conn}
 		rc.Request([]string{"REPLCONF", "listening-port", s.Infos["server"]["port"]})
-		s.Handler(conn, s.HandleResponse)
+		s.Handler2(conn, s.HandleResponse)
 		rc.Request([]string{"REPLCONF", "capa", "npsync2"})
-		s.Handler(conn, s.HandleResponse)
+		s.Handler2(conn, s.HandleResponse)
 	}
 	return nil
 }
