@@ -122,6 +122,7 @@ func (s *RedisServer) SetCommands() {
 	}
 }
 
+
 func (s *RedisServer) HandShake(conn net.Conn, handler func(net.Conn, string)) {
 	s.Action = handler
 	buf := make([]byte, 1024)
