@@ -137,9 +137,28 @@ func (s *RedisServer) SlaveConnMaster() error {
 		ping := &builtin.Ping{Conn: conn}
 		ping.Request([]string{"PING"})
 		s.Handler2(conn, s.HandleResponse)
+		conn, err = net.Dial("tcp",
+			fmt.Sprintf("%s:%s",
+				s.Infos["replication"]["master_host"],
+				s.Infos["replication"]["master_port"],
+			),
+		)
+		if err != nil {
+			return err
+		}
 		rc := &builtin.ReplConf{Conn: conn}
 		rc.Request([]string{"REPLCONF", "listening-port", s.Infos["server"]["port"]})
 		s.Handler2(conn, s.HandleResponse)
+		conn, err = net.Dial("tcp",
+		fmt.Sprintf("%s:%s",
+		s.Infos["replication"]["master_host"],
+				s.Infos["replication"]["master_port"],
+			),
+		)
+		if err != nil {
+			return err
+		}
+		rc = &builtin.ReplConf{Conn: conn}
 		rc.Request([]string{"REPLCONF", "capa", "npsync2"})
 		s.Handler2(conn, s.HandleResponse)
 	}
@@ -161,6 +180,7 @@ func (s *RedisServer) HandleRequest(conn net.Conn, buf string) {
 }
 
 func (s *RedisServer) HandleResponse(conn net.Conn, buf string) {
+	fmt.Printf("%s\n", buf)
 	rpp := parser.RedisProtocolParser{Idx: 0}
 	it, _ := rpp.ParserProtocol(buf)
 	cmd := it.([]string)
