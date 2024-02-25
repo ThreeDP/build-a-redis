@@ -180,7 +180,6 @@ func (s *RedisServer) HandleRequest(conn net.Conn, buf string) {
 }
 
 func (s *RedisServer) HandleResponse(conn net.Conn, buf string) {
-	fmt.Printf("%s\n", buf)
 	rpp := parser.RedisProtocolParser{Idx: 0}
 	it, _ := rpp.ParserProtocol(buf)
 	cmd := it.([]string)
