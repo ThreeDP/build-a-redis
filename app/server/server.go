@@ -5,7 +5,6 @@ import (
 	"net"
 	"strings"
 	"time"
-	"os"
 
 	"github.com/codecrafters-io/redis-starter-go/app/builtin"
 	"github.com/codecrafters-io/redis-starter-go/app/define"
@@ -122,29 +121,19 @@ func (s *RedisServer) SetCommands() {
 	}
 }
 
-func (s *RedisServer) SetHandShake() ([]builtin.Builtin, [][]string) {
-	handShake := []builtin.Builtin{
-		&builtin.Ping{},
-		&builtin.ReplConf{},
-		&builtin.ReplConf{},
-	}
-
+func (s *RedisServer) HandShake(conn net.Conn, handler func(net.Conn, string)) {
+	s.Action = handler
+	buf := make([]byte, 1024)
 	params := [][]string{
 		{"PING"},
 		{"REPLCONF", "listening-port", s.Infos["server"]["port"]},
 		{"REPLCONF", "capa", "npsync2"},
 	}
 
-	return handShake, params
-}
-
-func (s *RedisServer) HandShake(conn net.Conn, handler func(net.Conn, string)) {
-	s.Action = handler
-	buf := make([]byte, 1024)
-	handShake, params := s.SetHandShake()
-
-	for i, h := range handShake {
-		h.Request(params[i])
+	for _, param := range params {
+		b, ok := s.Commands(param[0], conn, s.Time.Now())
+		if !ok {return}
+		b.Request(param)
 		s.Read(conn, buf)
 		s.Action(conn, string(buf))
 	}
@@ -162,7 +151,7 @@ func (s *RedisServer) SlaveConnMaster() error {
 		if err != nil {
 			return err
 		}
-		go s.HandShake(conn, s.HandleResponse)
+		s.HandShake(conn, s.HandleResponse)
 		defer conn.Close()
 	}
 	return nil
@@ -197,7 +186,7 @@ func (s *RedisServer) Handler(conn net.Conn, handler func(net.Conn, string)) {
 	for {
 		n, err := conn.Read(buf)
 		if err != nil || n == 0 {
-			os.Exit(0)
+			return
 		}
 		s.Action(conn, string(buf))
 	}

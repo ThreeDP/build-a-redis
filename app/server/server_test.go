@@ -127,7 +127,7 @@ func TestListenServer(t *testing.T) {
 		s.Args = []string{}
 		expectedAddr := TListener{
 			Address: &TAddr{Netw: "tcp",
-			Host: "0.0.0.0",
+			Host: "localhost",
 			Port: "6379"},
 		}
 
@@ -141,7 +141,7 @@ func TestListenServer(t *testing.T) {
 		s.Args = []string{"--port", "6380"}
 		expectedAddr := TListener{
 			Address: &TAddr{Netw: "tcp",
-			Host: "0.0.0.0",
+			Host: "localhost",
 			Port: "6380"},
 		}
 
@@ -152,10 +152,10 @@ func TestListenServer(t *testing.T) {
 
 	t.Run("Test Listen with flags --port --replicaof", func(t *testing.T) {
 		s := setupRedisServer(nil)
-		s.Args = []string{"--port", "6380", "--replicaof", "0.0.0.0", "6379" }
+		s.Args = []string{"--port", "6380", "--replicaof", "localhost", "6379" }
 		expectedAddr := TListener{
 			Address: &TAddr{Netw: "tcp",
-			Host: "0.0.0.0",
+			Host: "localhost",
 			Port: "6380"},
 		}
 
