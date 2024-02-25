@@ -35,7 +35,7 @@ type RedisServer struct {
 	Idx      	int
 	Listener 	net.Listener
 	Action		func(net.Conn, string)
-	Commands	func(key string) (builtin.Builtin, bool)
+	Commands	func(key string, conn net.Conn, now time.Time) (builtin.Builtin, bool)
 }
 
 // functions responsible for insert the server informations
@@ -103,15 +103,16 @@ func (s *RedisServer) Listen(nl INetIListen) error {
 	return nil
 }
 
-func (s *RedisServer) SetCommands() func(key string, conn net.Conn, now time.Time) (builtin.Builtin, bool) {
+func (s *RedisServer) SetCommands() {
 	commands := map[string]builtin.Builtin{
-		"echo": &builtin.Echo{},
-		"ping": &builtin.Ping{},
-		"info": &builtin.Info{Infos: s.Infos},
-		"get": &builtin.Get{Mutex: &s.Mutex, Env: s.Env},
-		"set": &builtin.Set{Mutex: &s.Mutex, Env: s.Env},
+		"echo": &builtin.Echo{Conn: nil, Now: time.Time{}},
+		"ping": &builtin.Ping{Conn: nil, Now: time.Time{}},
+		"info": &builtin.Info{Infos: s.Infos, Conn: nil, Now: time.Time{}},
+		"get": &builtin.Get{Mutex: &s.Mutex, Env: s.Env, Conn: nil, Now: time.Time{}},
+		"set": &builtin.Set{Mutex: &s.Mutex, Env: s.Env, Conn: nil, Now: time.Time{}},
+		"replconf": &builtin.ReplConf{Conn: nil, Env: s.Env, Now: time.Time{}},
 	}
-	return func(key string, conn net.Conn, now time.Time) (builtin.Builtin, bool) {
+	s.Commands = func(key string, conn net.Conn, now time.Time) (builtin.Builtin, bool) {
 		elem, ok := commands[key]
 		if ok {
 			elem.SetConn(conn)
@@ -136,6 +137,11 @@ func (s *RedisServer) SlaveConnMaster() error {
 		ping := &builtin.Ping{Conn: conn}
 		ping.Request([]string{"PING"})
 		s.Handler(conn, s.HandleResponse)
+		rc := &builtin.ReplConf{Conn: conn}
+		rc.Request([]string{"REPLCONF", "listening-port", s.Infos["server"]["port"]})
+		s.Handler(conn, s.HandleResponse)
+		rc.Request([]string{"REPLCONF", "capa", "npsync2"})
+		s.Handler(conn, s.HandleResponse)
 	}
 	return nil
 }
@@ -145,7 +151,7 @@ func (s *RedisServer) HandleRequest(conn net.Conn, buf string) {
 	rpp := parser.RedisProtocolParser{Idx: 0}
 	it, _ := rpp.ParserProtocol(buf)
 	cmd := it.([]string)
-	b, ok := s.Commands(strings.ToLower(cmd[0]))
+	b, ok := s.Commands(strings.ToLower(cmd[0]), conn, s.Time.Now())
 	if !ok {
 		err := fmt.Sprintf("-ERR unknown command '%s'\r\n", cmd[0])
 		conn.Write([]byte(err))
@@ -157,8 +163,8 @@ func (s *RedisServer) HandleRequest(conn net.Conn, buf string) {
 func (s *RedisServer) HandleResponse(conn net.Conn, buf string) {
 	rpp := parser.RedisProtocolParser{Idx: 0}
 	it, _ := rpp.ParserProtocol(buf)
-	cmd := it.(string)
-	fmt.Printf("%s\n", cmd)
+	cmd := it.([]string)
+	fmt.Printf("%s\n", cmd[0])
 }
 
 func (s *RedisServer) Handler(conn net.Conn, handler func (net.Conn, string)) {
@@ -172,7 +178,7 @@ func (s *RedisServer) Handler(conn net.Conn, handler func (net.Conn, string)) {
 			return
 		}
 		if n == 0 {
-			break
+			return
 		}
 		s.Action(conn, string(buf))
 	}

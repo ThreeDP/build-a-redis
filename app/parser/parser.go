@@ -3,7 +3,6 @@ package parser
 import (
 	"strconv"
 	"strings"
-	"fmt"
 
 	"github.com/codecrafters-io/redis-starter-go/app/define"
 )
@@ -58,8 +57,7 @@ func (rpp *RedisProtocolParser) arrayParser(pieces []string) (interface{}, error
 }
 
 func (rpp *RedisProtocolParser) SimpleStringDecode(pieces []string) (interface{}, error) {
-	fmt.Printf("SimpleStringDecode: %s\n", pieces[rpp.Idx])
-	return pieces[rpp.Idx][1:], nil
+	return []string{pieces[rpp.Idx][1:]}, nil
 }
 
 func (rpp *RedisProtocolParser) defineDataType(pieces []string) (interface{}, error) {
