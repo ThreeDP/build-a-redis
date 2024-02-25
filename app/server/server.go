@@ -136,11 +136,11 @@ func (s *RedisServer) SlaveConnMaster() error {
 		ping := &builtin.Ping{Conn: conn}
 		ping.Request([]string{"PING"})
 		s.Handler(conn, s.HandleResponse)
-		rc := &builtin.ReplConf{Conn: conn}
-		rc.Request([]string{"REPLCONF", "listening-port", s.Infos["server"]["port"]})
-		s.Handler(conn, s.HandleResponse)
-		rc.Request([]string{"REPLCONF", "capa", "npsync2"})
-		s.Handler(conn, s.HandleResponse)
+		// rc := &builtin.ReplConf{Conn: conn}
+		// rc.Request([]string{"REPLCONF", "listening-port", s.Infos["server"]["port"]})
+		// s.Handler(conn, s.HandleResponse)
+		// rc.Request([]string{"REPLCONF", "capa", "npsync2"})
+		// s.Handler(conn, s.HandleResponse)
 	}
 	return nil
 }
