@@ -70,9 +70,10 @@ type SetupFilesRDWR struct {
 	Env      map[string]EnvData
 	Mutex    IMutex
 	TimeNow  time.Time
+	Infos	map[string]map[string]string
 }
 
-func (s *SetupFilesRDWR) config(data map[string]EnvData) {
+func (s *SetupFilesRDWR) config(data map[string]EnvData, infos map[string]map[string]string) {
 	s.In = make([]byte, define.BUFFERSIZE)
 	s.Out = make([]byte, define.BUFFERSIZE)
 	s.Expected = make([]byte, define.BUFFERSIZE)
@@ -80,6 +81,7 @@ func (s *SetupFilesRDWR) config(data map[string]EnvData) {
 	s.Env = data
 	s.Mutex = TMutex{}
 	s.TimeNow = time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC)
+	s.Infos = infos
 }
 
 func (s *SetupFilesRDWR) reset() {
@@ -138,3 +140,38 @@ type TMutex struct{}
 func (m TMutex) Lock()         {}
 func (m TMutex) Unlock()       {}
 func (m TMutex) TryLock() bool { return false }
+
+func TestBultinsSets(t *testing.T) {
+	s := SetupFilesRDWR{}
+	s.config(nil, nil)
+
+	builtins := []Builtin{
+		&Set{},
+		&Get{},
+		&Echo{},
+		&Info{},
+		&Ping{},
+		&PSync{},
+		&ReplConf{},
+	}
+
+	t.Run("Test Set TimeNow", func(t *testing.T) {
+		for _, builtin := range builtins {
+			builtin.SetTimeNow(s.TimeNow)
+
+			if builtin.GetTimeNow() != s.TimeNow {
+				t.Errorf("Expected %v, but has %v\n", s.TimeNow, builtin.GetTimeNow())
+			}
+		}
+	})
+
+	t.Run("Test Set Conn", func(t *testing.T) {
+		for _, builtin := range builtins {
+			builtin.SetConn(s.Conn)
+
+			if !reflect.DeepEqual(builtin.GetConn(), s.Conn) {
+				t.Errorf("Expected %v, but has %v\n", s.Conn, builtin.GetConn())
+			}
+		}
+	})
+}

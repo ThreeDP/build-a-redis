@@ -1,13 +1,12 @@
 package builtin
 
 import (
-	"reflect"
 	"testing"
 )
 
 func TestPingBuiltinRequest(t *testing.T) {
 	s := SetupFilesRDWR{}
-	s.config(nil)
+	s.config(nil, nil)
 
 	t.Run("Test ping with string 'ping'", func(t *testing.T) {
 		ping := Ping{Conn: s.Conn}
@@ -21,32 +20,9 @@ func TestPingBuiltinRequest(t *testing.T) {
 	})
 }
 
-func TestPingSets(t *testing.T) {
-	s := SetupFilesRDWR{}
-	s.config(nil)
-
-	t.Run("Test set Ping time now", func(t *testing.T) {
-		ping := Ping{Conn: s.Conn}
-		ping.SetTimeNow(s.TimeNow)
-
-		if ping.Now != s.TimeNow {
-			t.Errorf("Expected %v, but has %v\n", s.TimeNow, ping.Now)
-		}
-	})
-
-	t.Run("Test set Ping conn", func(t *testing.T) {
-		ping := Ping{}
-		ping.SetConn(s.Conn)
-
-		if !reflect.DeepEqual(ping.Conn, s.Conn) {
-			t.Errorf("Expected %v, but has %v\n", s.Conn, ping.Conn)
-		}
-	})
-}
-
 func BenchmarkPingBuiltin(b *testing.B) {
 	s := SetupFilesRDWR{}
-	s.config(nil)
+	s.config(nil, nil)
 	params := []string{"ping"}
 	ping := Ping{Conn: s.Conn}
 

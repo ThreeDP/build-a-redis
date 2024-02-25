@@ -25,6 +25,14 @@ func (rc *ReplConf) SetConn(conn net.Conn) {
 	rc.Conn = conn
 }
 
+func (rc * ReplConf) GetConn() net.Conn {
+	return rc.Conn
+}
+
 func (rc *ReplConf) SetTimeNow(now time.Time) {
 	rc.Now = now
+}
+
+func (rc *ReplConf) GetTimeNow() time.Time {
+	return rc.Now
 }

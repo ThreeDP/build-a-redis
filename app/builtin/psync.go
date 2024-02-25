@@ -13,7 +13,9 @@ func (p *PSync) Request(params []string) {
 }
 
 func (p *PSync) Response(params []string) {
-	str := fmt.Sprintf("+FULLRESYNC %s 0\r\n", p.Infos["replication"]["master_replid"])
+	str := fmt.Sprintf("+FULLRESYNC %s %s\r\n",
+	p.Infos["replication"]["master_replid"],
+	p.Infos["replication"]["master_repl_offset"])
 	p.Conn.Write([]byte(str))
 }
 
@@ -21,7 +23,14 @@ func (p *PSync) SetConn(conn net.Conn) {
 	p.Conn = conn
 }
 
+func (p *PSync) GetConn() net.Conn {
+	return p.Conn
+}
+
 func (p *PSync) SetTimeNow(now time.Time) {
 	p.Now = now
 }
-//
+
+func (p *PSync) GetTimeNow() time.Time {
+	return p.Now
+}

@@ -48,6 +48,14 @@ func (i *Info) SetConn(conn net.Conn) {
 	i.Conn = conn
 }
 
+func (i *Info) GetConn() net.Conn {
+	return i.Conn
+}
+
 func (i *Info) SetTimeNow(now time.Time) {
 	i.Now = now
+}
+
+func (i *Info) GetTimeNow() time.Time {
+	return i.Now
 }

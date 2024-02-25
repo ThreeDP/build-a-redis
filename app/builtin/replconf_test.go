@@ -7,7 +7,7 @@ import (
 func TestReplConfBuiltin(t *testing.T) {
 	s := SetupFilesRDWR{}
 	getTime := TTime{}
-	s.config(nil)
+	s.config(nil, nil)
 
 	t.Run("Test handler Request reply conf listening-port 6380", func(t *testing.T) {
 		rc := ReplConf{Conn: s.Conn, Env: s.Env, Now: getTime.Now()}
@@ -40,5 +40,26 @@ func TestReplConfBuiltin(t *testing.T) {
 
 		compareStrings(t, s.Expected, s.Out)
 		s.reset()
+	})
+}
+
+func BenchmarkReplConfBuiltin(b *testing.B) {
+	s := SetupFilesRDWR{}
+	getTime := TTime{}
+	s.config(nil, nil)
+	rc := ReplConf{Conn: s.Conn, Env: s.Env, Now: getTime.Now()}
+	
+	b.Run("Benchmark handler Request reply conf listening-port 6380", func(b *testing.B) {
+		params := []string{"listening-port", "6380"}
+		for i := 0; i < b.N; i++ {
+			rc.Response(params)
+		}
+	})
+
+	b.Run("Benchmark handler Response reply conf listening-port 6380", func(b *testing.B) {
+		params := []string{"REPLCONF", "listening-port", "6380"}
+		for i := 0; i < b.N; i++ {
+			rc.Request(params)
+		}
 	})
 }

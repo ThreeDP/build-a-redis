@@ -19,6 +19,14 @@ func (p *Ping) SetConn(conn net.Conn) {
 	p.Conn = conn
 }
 
+func (p *Ping) GetConn() net.Conn {
+	return p.Conn
+}
+
 func (p *Ping) SetTimeNow(now time.Time) {
 	p.Now = now
+}
+
+func (p *Ping) GetTimeNow() time.Time {
+	return p.Now
 }

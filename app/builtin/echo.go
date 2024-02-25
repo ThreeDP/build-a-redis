@@ -26,6 +26,14 @@ func (e *Echo) SetConn(conn net.Conn) {
 	e.Conn = conn
 }
 
+func (e *Echo) GetConn() net.Conn {
+	return e.Conn
+}
+
 func (e *Echo) SetTimeNow(now time.Time) {
 	e.Now = now
+}
+
+func (e *Echo) GetTimeNow() time.Time {
+	return e.Now
 }

@@ -12,7 +12,7 @@ func TestSetBuiltin(t *testing.T) {
 	s.config(map[string]EnvData{
 		"Percy": {Value: "???", Expiry: s.TimeNow, MustExpire: false},
 		"EX":    {Value: "?!?", Expiry: s.TimeNow.Add(time.Millisecond * 100), MustExpire: true},
-	})
+	}, nil)
 
 	t.Run("Test set Percy with value response Jackson", func(t *testing.T) {
 		set := Set{Conn: s.Conn, Env: s.Env, Mutex: s.Mutex, Now: getTime.Now()}
@@ -66,7 +66,7 @@ func BenchmarkSetBuiltin(b *testing.B) {
 	s.config(map[string]EnvData{
 		"Percy": {Value: "???", Expiry: s.TimeNow, MustExpire: false},
 		"EX":    {Value: "?!?", Expiry: s.TimeNow.Add(time.Millisecond * 100), MustExpire: true},
-	})
+	}, nil)
 	set := Set{Conn: s.Conn, Env: s.Env, Mutex: s.Mutex, Now: getTime.Now()}
 
 	for i := 0; i < b.N; i++ {

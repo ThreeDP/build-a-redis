@@ -10,7 +10,7 @@ func TestGetBuiltin(t *testing.T) {
 	s.config(map[string]EnvData{
 		"Percy": {Value: "Jackson", Expiry: s.TimeNow, MustExpire: false},
 		"Key":   {Value: "Value", Expiry: s.TimeNow.Add(-10 * time.Millisecond), MustExpire: true},
-	})
+	}, nil)
 
 	t.Run("Test get key Percy and response Jackson", func(t *testing.T) {
 		get := Get{Conn: s.Conn, Env: s.Env, Mutex: s.Mutex}
@@ -50,7 +50,7 @@ func BenchmarkGetBuiltin(b *testing.B) {
 	s.config(map[string]EnvData{
 		"Percy": {Value: "Jackson", Expiry: s.TimeNow, MustExpire: false},
 		"Key":   {Value: "Value", Expiry: s.TimeNow.Add(-10 * time.Millisecond), MustExpire: true},
-	})
+	}, nil)
 	get := Get{Conn: s.Conn, Env: s.Env, Mutex: s.Mutex}
 	params := []string{"Percy"}
 

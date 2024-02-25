@@ -6,7 +6,7 @@ import (
 
 func TestInfoBuiltin(t *testing.T) {
 	s := SetupFilesRDWR{}
-	s.config(nil)
+	s.config(nil, nil)
 
 	t.Run("Test Info only command", func(t *testing.T) {
 		i := map[string]map[string]string{

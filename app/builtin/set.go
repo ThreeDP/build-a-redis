@@ -36,6 +36,14 @@ func (s *Set) SetConn(conn net.Conn) {
 	s.Conn = conn
 }
 
+func (s *Set) GetConn() net.Conn {
+	return s.Conn
+}
+
 func (s *Set) SetTimeNow(now time.Time) {
 	s.Now = now
+}
+
+func (s *Set) GetTimeNow() time.Time {
+	return s.Now
 }

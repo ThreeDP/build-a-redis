@@ -6,7 +6,7 @@ import (
 
 func TestEchoBuiltin(t *testing.T) {
 	s := SetupFilesRDWR{}
-	s.config(nil)
+	s.config(nil, nil)
 
 	t.Run("Test pass a \"hey\" string", func(t *testing.T) {
 		echo := Echo{Conn: s.Conn}
@@ -45,7 +45,7 @@ func TestEchoBuiltin(t *testing.T) {
 
 func BenchmarkEchoBuiltin(b *testing.B) {
 	s := SetupFilesRDWR{}
-	s.config(nil)
+	s.config(nil, nil)
 	params := []string{"hey", "ho", "lets", "go"}
 	echo := Echo{Conn: s.Conn}
 
