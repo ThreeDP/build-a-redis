@@ -5,6 +5,7 @@ import (
 	"net"
 	"strings"
 	"time"
+	"os"
 
 	"github.com/codecrafters-io/redis-starter-go/app/builtin"
 	"github.com/codecrafters-io/redis-starter-go/app/define"
@@ -121,21 +122,11 @@ func (s *RedisServer) SetCommands() {
 	}
 }
 
-func (s *RedisServer) HandShake() error {
-	conn, err := net.Dial("tcp",
-	fmt.Sprintf("%s:%s",
-		s.Infos["replication"]["master_host"],
-		s.Infos["replication"]["master_port"],
-	),
-	)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
+func (s *RedisServer) SetHandShake() ([]builtin.Builtin, [][]string) {
 	handShake := []builtin.Builtin{
-		&builtin.Ping{Conn: conn},
-		&builtin.ReplConf{Conn: conn},
-		&builtin.ReplConf{Conn: conn},
+		&builtin.Ping{},
+		&builtin.ReplConf{},
+		&builtin.ReplConf{},
 	}
 
 	params := [][]string{
@@ -144,17 +135,35 @@ func (s *RedisServer) HandShake() error {
 		{"REPLCONF", "capa", "npsync2"},
 	}
 
+	return handShake, params
+}
+
+func (s *RedisServer) HandShake(conn net.Conn, handler func(net.Conn, string)) {
+	s.Action = handler
+	buf := make([]byte, 1024)
+	handShake, params := s.SetHandShake()
+
 	for i, h := range handShake {
 		h.Request(params[i])
-		s.Handler2(conn, s.HandleResponse)
+		s.Read(conn, buf)
+		s.Action(conn, string(buf))
 	}
-	return nil
 }
 
 func (s *RedisServer) SlaveConnMaster() error {
 	fmt.Printf("Connecting to %s\n", s.Infos["replication"]["role"])
 	if s.Infos["replication"]["role"] == "slave" {
-		go s.HandShake()
+		conn, err := net.Dial("tcp",
+		fmt.Sprintf("%s:%s",
+			s.Infos["replication"]["master_host"],
+			s.Infos["replication"]["master_port"],
+		),
+		)
+		if err != nil {
+			return err
+		}
+		go s.HandShake(conn, s.HandleResponse)
+		defer conn.Close()
 	}
 	return nil
 }
@@ -185,30 +194,10 @@ func (s *RedisServer) Handler(conn net.Conn, handler func(net.Conn, string)) {
 	buf := make([]byte, 1024)
 	s.Action = handler
 
-	fmt.Printf("Connection from %s\n", s.Infos["replcation"]["role"])
 	for {
 		n, err := conn.Read(buf)
-		if err != nil {
-			return
-		}
-		if n == 0 {
-			return
-		}
-		s.Action(conn, string(buf))
-	}
-}
-
-func (s *RedisServer) Handler2(conn net.Conn, handler func(net.Conn, string)) {
-	buf := make([]byte, 1024)
-	s.Action = handler
-
-	for {
-		n, err := conn.Read(buf)
-		if err != nil {
-			return
-		}
-		if n == 0 {
-			return
+		if err != nil || n == 0 {
+			os.Exit(0)
 		}
 		s.Action(conn, string(buf))
 	}
