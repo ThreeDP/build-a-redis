@@ -146,6 +146,7 @@ func (s *RedisServer) SlaveConnMaster() error {
 	return nil
 }
 
+
 func (s *RedisServer) HandleRequest(conn net.Conn, buf string) {
 	var b builtin.Builtin
 	rpp := parser.RedisProtocolParser{Idx: 0}
