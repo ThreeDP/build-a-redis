@@ -56,3 +56,8 @@ type Ping struct {
 	Conn net.Conn
 	Now  time.Time
 }
+
+type PSync struct {
+	Conn net.Conn
+	Now  time.Time
+}

@@ -1,7 +1,6 @@
 package builtin
 
 import (
-	"fmt"
 	"net"
 	"time"
 
@@ -19,7 +18,6 @@ func (rc *ReplConf) Request(params []string) {
 }
 
 func (rc *ReplConf) Response(params []string) {
-	fmt.Println(params)
 	rc.Conn.Write([]byte("+OK\r\n"))
 }
 
