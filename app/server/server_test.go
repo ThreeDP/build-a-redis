@@ -2,7 +2,6 @@ package server
 
 import (
 	"net"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -51,6 +50,37 @@ func (c TConn) RemoteAddr() net.Addr {
 func (c *TConn) NewConn() {
 	c.In = make([]byte, define.BUFFERSIZE)
 	c.Out = make([]byte, define.BUFFERSIZE)
+}
+
+func NewDefaultTRedisServer() RedisServer {
+	timeNow := time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC)
+	return RedisServer{
+		Env: map[string]builtin.EnvData {
+			"Percy": {Value: "Jackson", Expiry: timeNow, MustExpire: false},
+			"Key":   {Value: "Value", Expiry: timeNow.Add(-10 * time.Millisecond), MustExpire: true},
+		},
+		Infos: map[string]map[string]string{
+			"replication": {
+				"role":					"master",
+				"master_replid":		"8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb",
+				"master_repl_offset":	"0",
+				"master_host":			"localhost",
+				"master_port":			define.DEFAULPORT,
+				"master_link_status":	"down",
+			},
+			"server": {
+				"port":					define.DEFAULPORT,
+				"listener0":			"name=tcp,bind=*,bind=localhost,port=" + define.DEFAULPORT,
+			},
+		},
+		Mutex: TMutex{},
+		Time: TTime{},
+		Args: []string{},
+		Idx: 0,
+		Listener: nil,
+		Action: nil,
+		Commands: nil,
+	}
 }
 
 /*
@@ -164,191 +194,8 @@ func TestListenServer(t *testing.T) {
 	})
 }
 
-func TestHandleArgs(t *testing.T) {
-	t.Run("Test HandleArgs with no flags", func(t *testing.T) {
-		s := setupRedisServer(nil)
-		s.Args = []string{""}
 
-		s.HandleArgs()
 
-		checkInfosMap(t, s.Infos["replication"], "role", "master")
-		checkInfosMap(t, s.Infos["server"], "port", define.DEFAULPORT)
-	})
-
-	t.Run("Test HandleArgs with flag --port", func(t *testing.T) {
-		s := setupRedisServer(nil)
-		s.Args = []string{"--port", "7589"}
-
-		s.HandleArgs()
-		
-		checkInfosMap(t, s.Infos["replication"], "role", "master")
-		checkInfosMap(t, s.Infos["server"], "port", "7589")
-	})
-
-	t.Run("Test HandleArgs with flag --port --replicaof ", func(t *testing.T) {
-		s := setupRedisServer(nil)
-		s.Args = []string{"--port", "8000", "--replicaof", "localhost", "8000"}
-
-		s.HandleArgs()
-		
-		checkInfosMap(t, s.Infos["replication"], "role", "slave")
-		checkInfosMap(t, s.Infos["server"], "port", "8000")
-	})
-}
-
-func TestSetCommands(t *testing.T) {
-	s := setupRedisServer(nil)
-
-	t.Run("Test SetCommands with 'echo' command", func(t *testing.T) {
-		s.SetCommands()
-		b, ok := s.Commands("echo", nil, s.Time.Now())
-		if !ok {
-			t.Errorf("Expected command echo, but has not\n")
-		}
-		_, ok = b.(*builtin.Echo)
-		if !ok {
-			t.Errorf("Expected conn %T, but has %T\n", builtin.Echo{}, b)
-		}
-	})
-
-	t.Run("Test SetCommands with 'ping' command", func(t *testing.T) {
-		s.SetCommands()
-		b, ok := s.Commands("pinG", nil, s.Time.Now())
-		if !ok {
-			t.Errorf("Expected command ping, but has not\n")
-		}
-		_, ok = b.(*builtin.Ping)
-		if !ok {
-			t.Errorf("Expected conn %T, but has %T\n", builtin.Ping{}, b)
-		}
-	})
-
-	t.Run("Test SetCommands with 'info' command", func(t *testing.T) {
-		s.SetCommands()
-		b, ok := s.Commands("iNfo", nil, s.Time.Now())
-		if !ok {
-			t.Errorf("Expected command info, but has not\n")
-		}
-		_, ok = b.(*builtin.Info)
-		if !ok {
-			t.Errorf("Expected conn %T, but has %T\n", builtin.Info{}, b)
-		}
-	})
-
-	t.Run("Test SetCommands with 'get' command", func(t *testing.T) {
-		s.SetCommands()
-		b, ok := s.Commands("Get", nil, s.Time.Now())
-		if !ok {
-			t.Errorf("Expected command get, but has not\n")
-		}
-		_, ok = b.(*builtin.Get)
-		if !ok {
-			t.Errorf("Expected conn %T, but has %T\n", builtin.Get{}, b)
-		}
-	})
-
-	t.Run("Test SetCommands with 'set' command", func(t *testing.T) {
-		s.SetCommands()
-		b, ok := s.Commands("SET", nil, s.Time.Now())
-		if !ok {
-			t.Errorf("Expected command set, but has not\n")
-		}
-		_, ok = b.(*builtin.Set)
-		if !ok {
-			t.Errorf("Expected conn %T, but has %T\n", builtin.Set{}, b)
-		}
-	})
-
-	t.Run("Test SetCommands with 'replconf' command", func(t *testing.T) {
-		s.SetCommands()
-		b, ok := s.Commands("replconf", nil, s.Time.Now())
-		if !ok {
-			t.Errorf("Expected command replconf, but has not\n")
-		}
-		_, ok = b.(*builtin.ReplConf)
-		if !ok {
-			t.Errorf("Expected conn %T, but has %T\n", builtin.ReplConf{}, b)
-		}
-	})
-
-	t.Run("Test SetCommands with unknown command", func(t *testing.T) {
-		s.SetCommands()
-		_, ok := s.Commands("unknown", nil, s.Time.Now())
-		if ok {
-			t.Errorf("Expected unknown command, but has not\n")
-		}
-	})
-}
-
-func TestHandleRequest(t *testing.T) {
-	tm := TTime{}
-	s := setupRedisServer(map[string]builtin.EnvData{
-		"Percy": {Value: "Jackson", Expiry: tm.Now(), MustExpire: false},
-	})
-	conn := TConn{}
-	s.SetCommands()
-
-	t.Run("Test *2\\r\\n$4\\r\\necho\\r\\n$2\\r\\nhi\\r\\n command", func(t *testing.T) {
-		conn.NewConn()
-		expected := make([]byte, define.BUFFERSIZE)
-		buf := "*2\r\n$4\r\necho\r\n$2\r\nhi\r\n"
-		copy(expected, "+hi\r\n")
-
-		s.HandleRequest(&conn, buf)
-
-		if !reflect.DeepEqual(conn.Out, expected) {
-			t.Errorf("Expected '%v', but has '%v'\n", string(expected), string(conn.Out))
-		}
-	})
-
-	t.Run("Test *2\\r\\n$3\\r\\nget\\r\\n$5\\r\\nPercy\\r\\n command", func(t *testing.T) {
-		conn.NewConn()
-		expected := make([]byte, define.BUFFERSIZE)
-		buf := "*2\r\n$3\r\nget\r\n$5\r\nPercy\r\n"
-		copy(expected, "$7\r\nJackson\r\n")
-
-		s.HandleRequest(&conn, buf)
-		if !reflect.DeepEqual(conn.Out, expected) {
-			t.Errorf("Expected '%v', but has '%v'\n", string(expected), string(conn.Out))
-		}
-	})
-
-	t.Run("Test *2\\r\\n$3\\r\\nget\\r\\n$7\\r\\nunknown\\r\\n command", func(t *testing.T) {	
-		conn.NewConn()
-		expected := make([]byte, define.BUFFERSIZE)
-		buf := "*2\r\n$3\r\nget\r\n$7\r\nunknown\r\n"
-		copy(expected, "$-1\r\n")
-
-		s.HandleRequest(&conn, buf)
-		if !reflect.DeepEqual(conn.Out, expected) {
-			t.Errorf("Expected '%v', but has '%v'\n", string(expected), string(conn.Out))
-		}
-	})
-
-	t.Run("Test *3\\r\\n$3\\r\\nset\\r\\n$6\\r\\junior\\r\\n$4\r\\nluis\r\n command", func(t *testing.T) {
-		conn.NewConn()
-		expected := make([]byte, define.BUFFERSIZE)
-		buf := "*3\r\n$3\r\nset\r\n$6\r\njunior\r\n$4\r\nluis\r\n"
-		copy(expected, "+OK\r\n")
-
-		s.HandleRequest(&conn, buf)
-		if !reflect.DeepEqual(conn.Out, expected) {
-			t.Errorf("Expected '%v', but has '%v'\n", string(expected), string(conn.Out))
-		}
-	})
-
-	t.Run("Test *2\\r\\n$4\\r\\nunknown\\r\\n$3\\r\\n123\\r\\n command", func(t *testing.T) {
-		conn.NewConn()
-		expected := make([]byte, define.BUFFERSIZE)
-		buf := "*2\r\n$7\r\nunknown\r\n$3\r\n123\r\n"
-		copy(expected, "-ERR unknown command 'unknown'\r\n")
-
-		s.HandleRequest(&conn, buf)
-		if !reflect.DeepEqual(conn.Out, expected) {
-			t.Errorf("Expected '%v', but has '%v'\n", string(expected), string(conn.Out))
-		}
-	})
-}
 
 
 // func TestHandleResponse(t *testing.T) {
